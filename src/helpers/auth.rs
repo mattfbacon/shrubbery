@@ -1,4 +1,5 @@
 use crate::database::models::{self, User};
+use crate::helpers::remove_cookie;
 use actix_web::dev::Payload;
 use actix_web::http::StatusCode as HttpStatus;
 use actix_web::web::Data as WebData;
@@ -118,11 +119,7 @@ impl actix_web::ResponseError for AuthError {
 	fn error_response(&self) -> HttpResponse {
 		let mut builder = HttpResponse::build(self.status_code());
 		if self.should_remove_token() {
-			builder.cookie({
-				let mut cookie = actix_web::cookie::Cookie::new("token", "");
-				cookie.make_removal();
-				cookie
-			});
+			builder.cookie(remove_cookie("token"));
 		}
 		if let Some(redirect_to) = self.redirect_to() {
 			debug_assert!(self.status_code().is_redirection());
