@@ -4,6 +4,11 @@
 	--space-large: 2rem;
 	--space-medium: 1rem;
 	--space-small: 0.3rem;
+
+	--accent-primary: #e0ab77;
+	--foreground-on-primary: #000;
+	--accent-secondary: #7b7fbd;
+	--foreground-on-secondary: #fff;
 }
 
 body {
@@ -26,10 +31,29 @@ button,
 input[type="text"],
 input[type="password"],
 input[type="submit"],
-input[type="email"] {
+input[type="email"],
+input[type="search"] {
 	padding: var(--space-small);
 }
 
 .error-banner {
 	color: red;
+}
+
+nav#navbar {
+	display: flex;
+	margin: calc(-1 * var(--space-medium));
+	padding: var(--space-medium);
+	margin-bottom: 0;
+	background-color: var(--accent-primary);
+	color: var(--foreground-on-primary);
+	gap: var(--space-medium);
+}
+
+nav#navbar > div.spacer {
+	flex: 1;
+}
+
+nav#navbar a {
+	color: inherit;
 }

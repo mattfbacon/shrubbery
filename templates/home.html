@@ -1,0 +1,16 @@
+<!-- prettier-ignore -->
+{% extends "layouts/default.html" %}
+
+{% block title %}Home{%endblock %}
+
+{% block content %}
+{% include "partials/navbar.html" %}
+
+<h1>Hello, {{user.username}} ({{user.role}})</h1>
+
+<form method="get" action="/search">
+	<label for="search">Query:</label>
+	<input type="search" id="search" name="search" placeholder="tag & !other tag" />
+	<input type="submit" value="Search" />
+</form>
+{% endblock %}

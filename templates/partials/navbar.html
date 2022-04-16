@@ -1,0 +1,7 @@
+<nav id="navbar">
+	<span role="presentation">Shrubbery</span>
+	<div class="spacer" role="presentation"></div>
+	<a href="/">Home</a>
+	{% if user.role >= crate::database::models::UserRole::Admin %}<a href="/admin">Admin Panel</a>{% endif %}
+	<a href="/logout">Log out</a>
+</nav>
