@@ -29,7 +29,7 @@ pub fn error_handlers() -> ErrorHandlers<BoxBody> {
 				description: handled.canonical_reason().unwrap_or("").to_owned(),
 				associated_error: old.response().error().map(|err| err.to_string()),
 			};
-			let mut response = response
+			let response = response
 				.customize()
 				.with_status(handled)
 				.respond_to(old.request());
