@@ -6,13 +6,12 @@ mod root;
 
 use actix_web::web::ServiceConfig;
 pub fn configure(app: &mut ServiceConfig) {
-	app
-		.service(root::handler)
-		.service(login::get_handler)
-		.service(login::post_handler)
-		.service(register::get_handler)
-		.service(register::post_handler)
-		.service(logout::handler);
+	app.service(root::handler);
+	app.service(login::get_handler);
+	app.service(login::post_handler);
+	app.service(login::post_handler);
+	app.service(register::get_handler);
+	app.service(logout::handler);
 }
 
 pub use error::error_handlers;
