@@ -1,0 +1,35 @@
+/* palette: https://coolors.co/palette/335c67-fff3b0-e09f3e-9e2a2b-540b0e */
+
+:root {
+	--space-large: 2rem;
+	--space-medium: 1rem;
+	--space-small: 0.3rem;
+}
+
+body {
+	margin: var(--space-medium);
+}
+
+footer#license-notice {
+	font-size: small;
+	margin: var(--space-medium);
+	margin-top: var(--space-large);
+	border-top: 1px solid gray;
+}
+
+form > label ~ input:not([type="checkbox"]) {
+	display: block;
+	margin-bottom: var(--space-medium);
+}
+
+button,
+input[type="text"],
+input[type="password"],
+input[type="submit"],
+input[type="email"] {
+	padding: var(--space-small);
+}
+
+.error-banner {
+	color: red;
+}

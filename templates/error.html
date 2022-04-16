@@ -1,0 +1,17 @@
+<!-- prettier-ignore -->
+{% extends "layouts/default.html" %}
+
+{% block title %}Error!{% endblock %}
+
+{% block content %}
+<header>
+	<h1>An error occurred</h1>
+	<p><b>{{code}} {{description}}</b></p>
+</header>
+
+{% if let Some(error) = associated_error %}
+<code>{{error}}</code>
+{% endif %}
+
+<p><a href="/">Go back home?</a></p>
+{% endblock %}

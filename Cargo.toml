@@ -1,0 +1,33 @@
+[package]
+name = "shrubbery"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+
+[dependencies]
+actix-files = "0.6"
+actix-web = { version = "4", features = [] }
+aes-gcm = { version = "0.9", features = ["std"] }
+anyhow = "1"
+argon2 = { version = "0.4", features = ["password-hash", "std"] }
+askama = { version = "0.11", features = ["with-actix-web"] }
+askama_actix = "0.13"
+base64 = "0.13"
+bincode = "1"
+chrono = { version = "0.4", features = ["serde"] }
+figment = { version = "0.10", features = ["env", "toml"] }
+log = "0.4"
+percent-encoding = "2"
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+simple_logger = "2"
+thiserror = "1"
+
+[dependencies.sqlx]
+version = "0.5"
+features = ["chrono", "postgres", "runtime-actix-rustls", "macros", "migrate"]
+
+[dependencies.ormx]
+git = "https://github.com/mattfbacon/ormx"
+rev = "da6711bb5656d71da83ebb71e11413f61fc0260f"
+features = ["postgres"]

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>{% block title %}{% endblock %} - MyrtlePortal</title>
+		<link href="/favicon.ico" ref="shortcut icon" />
+		<link href="/res/style/main.css" rel="stylesheet" type="text/css" />
+		{% block styles %}{% endblock %}
+	</head>
+	<body>
+		{% block content %}{% endblock %} {% block footer %}
+		<footer id="license-notice">
+			<p>Shrubbery is free and libre open-source software (FLOSS) licensed under the GNU Affero General Public License version 3.0 (AGPLv3).</p>
+			<p>
+				Under this license you have a right as a user to access the source code. It is available at
+				<a href="https://github.com/mattfbacon/shrubbery" target="_blank">https://github.com/mattfbacon/shrubbery</a>.
+			</p>
+			<p>
+				The full text of the license is available at
+				<a href="https://www.gnu.org/licenses/agpl-3.0.en.html" target="_blank">https://www.gnu.org/licenses/agpl-3.0.en.html</a>.
+			</p>
+		</footer>
+		{% endblock %}
+	</body>
+</html>

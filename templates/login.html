@@ -1,0 +1,28 @@
+<!-- prettier-ignore -->
+{% extends "layouts/default.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+{% if let Some(message) = error %}
+<header class="error-banner"><em>Error: {{message}}</em></header>
+{% endif %}
+
+<h1>Log in</h1>
+
+<form method="post">
+	<label for="username">Username</label>
+	<input type="text" id="username" name="username" autocomplete="username" required />
+	<label for="password">Password</label>
+	<input type="password" id="password" name="password" autocomplete="current-password" required />
+	<label for="keep-logged-in">Keep logged in?</label>
+	<input type="checkbox" id="keep-logged-in" name="keep_logged_in" value="false" />
+	<input type="submit" value="Log in" />
+</form>
+
+<p>
+	Don't have an account?
+	<a href="/register{% if let Some(return_url) = return_url %}?return={{return_url}}{% endif %}">Register</a>
+</p>
+{% endblock %}

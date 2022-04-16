@@ -1,0 +1,7 @@
+{
+	embeddedLanguageFormatting: "auto",
+	endOfLine: "lf",
+	printWidth: 150,
+	tabWidth: 2,
+	useTabs: true,
+}

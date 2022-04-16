@@ -1,0 +1,76 @@
+use sqlx::encode::IsNull;
+use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo, PgValueRef};
+use sqlx::{Decode, Encode, Postgres, Type};
+use std::str::FromStr;
+use thiserror::Error;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Color {
+	pub red: u8,
+	pub green: u8,
+	pub blue: u8,
+}
+
+impl Color {
+	pub fn to_hex(self) -> String {
+		format!("#{:2x}{:2x}{:2x}", self.red, self.green, self.blue)
+	}
+
+	pub fn from_hex(hex: &str) -> Result<Self, ColorFromHexError> {
+		if hex.len() != 7 || hex.as_bytes()[0] != b'#' {
+			return Err(ColorFromHexError::Format);
+		}
+		Ok(Self {
+			red: u8::from_str_radix(&hex[1..3], 16)?,
+			green: u8::from_str_radix(&hex[3..5], 16)?,
+			blue: u8::from_str_radix(&hex[5..7], 16)?,
+		})
+	}
+}
+
+#[derive(Debug, Error)]
+pub enum ColorFromHexError {
+	#[error("string should be in format `#abcdef`")]
+	Format,
+	#[error("bad hex integer: {0}")]
+	Integer(#[from] std::num::ParseIntError),
+}
+
+impl Type<Postgres> for Color {
+	fn type_info() -> PgTypeInfo {
+		PgTypeInfo::with_name("color")
+	}
+}
+
+#[derive(Type)]
+#[sqlx(type_name = "color")]
+#[repr(transparent)]
+struct ColorProxy(String);
+
+impl Encode<'_, Postgres> for Color {
+	fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> IsNull {
+		ColorProxy(self.to_hex()).encode_by_ref(buf)
+	}
+
+	fn produces(&self) -> Option<PgTypeInfo> {
+		Some(Self::type_info())
+	}
+
+	fn size_hint(&self) -> usize {
+		// this is what the &str impl does
+		std::mem::size_of::<&str>()
+	}
+}
+
+impl<'r> Decode<'r, Postgres> for Color {
+	fn decode(value: PgValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
+		Ok(Self::from_hex(&ColorProxy::decode(value)?.0)?)
+	}
+}
+
+impl FromStr for Color {
+	type Err = ColorFromHexError;
+	fn from_str(hex: &str) -> Result<Self, Self::Err> {
+		Self::from_hex(hex)
+	}
+}
