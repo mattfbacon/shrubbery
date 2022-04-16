@@ -10,23 +10,39 @@ pub use user_crypt::PasswordHash as UserPassword;
 type Id = i32;
 type BigId = i64;
 
+#[derive(sqlx::Type, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[sqlx(type_name = "user_role")]
+#[sqlx(rename_all = "snake_case")]
+pub enum UserRole {
+	Viewer,
+	Editor,
+	Admin,
+}
+
+impl std::fmt::Display for UserRole {
+	fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		use UserRole::*;
+		formatter.write_str(match self {
+			Viewer => "viewer",
+			Editor => "editor",
+			Admin => "admin",
+		})
+	}
+}
+
 pub type UserId = Id;
 #[derive(Table)]
-#[ormx(table = "users", id = id, insertable, deletable)]
+#[ormx(table = "users", insertable, deletable)]
 pub struct User {
-	#[ormx(default, get_optional = by_id(UserId))]
+	#[ormx(get_optional = by_id(UserId))]
 	pub id: UserId,
 	#[ormx(get_optional = by_username(&str))]
 	pub username: String,
 	#[ormx(custom_type, by_ref)]
 	pub password: UserPassword,
 	pub email: Option<String>,
-	#[ormx(default)]
-	pub view_perm: bool,
-	#[ormx(default)]
-	pub edit_perm: bool,
-	#[ormx(default)]
-	pub admin_perm: bool,
+	#[ormx(default, custom_type, by_ref)]
+	pub role: UserRole,
 	#[ormx(default)]
 	pub created_time: Timestamp,
 	#[ormx(default, set)]
@@ -35,9 +51,8 @@ pub struct User {
 
 pub type FileId = BigId;
 #[derive(Table)]
-#[ormx(table = "files", id = id, insertable, deletable)]
+#[ormx(table = "files", insertable, deletable)]
 pub struct File {
-	#[ormx(default)]
 	pub id: FileId,
 	pub name: String,
 	pub description: Option<String>,
@@ -45,9 +60,8 @@ pub struct File {
 
 pub type TagCategoryId = Id;
 #[derive(Table)]
-#[ormx(table = "tag_categories", id = id, insertable, deletable)]
+#[ormx(table = "tag_categories", insertable, deletable)]
 pub struct TagCategory {
-	#[ormx(default)]
 	pub id: TagCategoryId,
 	pub name: String,
 	pub description: Option<String>,
@@ -60,9 +74,8 @@ pub struct TagCategory {
 
 pub type TagId = Id;
 #[derive(Table)]
-#[ormx(table = "tags", id = id, insertable, deletable)]
+#[ormx(table = "tags", insertable, deletable)]
 pub struct Tag {
-	#[ormx(default)]
 	pub id: TagId,
 	pub name: String,
 	pub description: Option<String>,
@@ -73,9 +86,8 @@ pub struct Tag {
 
 pub type FileTagId = Id;
 #[derive(Table)]
-#[ormx(table = "file_tags", id = id, insertable, deletable)]
+#[ormx(table = "file_tags", insertable, deletable)]
 pub struct FileTag {
-	#[ormx(default)]
 	pub id: FileTagId,
 	pub file: FileId,
 	pub tag: TagId,

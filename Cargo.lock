@@ -1258,7 +1258,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "ormx"
 version = "0.10.0"
-source = "git+https://github.com/mattfbacon/ormx?rev=da6711bb5656d71da83ebb71e11413f61fc0260f#da6711bb5656d71da83ebb71e11413f61fc0260f"
+source = "git+https://github.com/mattfbacon/ormx?rev=62300774d957692f3d6d135a2937eec299569318#62300774d957692f3d6d135a2937eec299569318"
 dependencies = [
  "futures",
  "ormx-macros",
@@ -1268,7 +1268,7 @@ dependencies = [
 [[package]]
 name = "ormx-macros"
 version = "0.10.4"
-source = "git+https://github.com/mattfbacon/ormx?rev=da6711bb5656d71da83ebb71e11413f61fc0260f#da6711bb5656d71da83ebb71e11413f61fc0260f"
+source = "git+https://github.com/mattfbacon/ormx?rev=62300774d957692f3d6d135a2937eec299569318#62300774d957692f3d6d135a2937eec299569318"
 dependencies = [
  "itertools",
  "once_cell",

@@ -13,3 +13,4 @@ DROP DOMAIN color;
 DROP TABLE files;
 
 DROP TABLE users;
+DROP TYPE user_role;
