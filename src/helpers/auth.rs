@@ -1,4 +1,4 @@
-use crate::database::models::User;
+use crate::database::models::{self, User};
 use actix_web::dev::Payload;
 use actix_web::http::StatusCode as HttpStatus;
 use actix_web::web::Data as WebData;
@@ -8,10 +8,68 @@ use std::sync::Arc;
 
 pub struct Auth(pub User);
 
+struct Params {
+	uri: String,
+	token: Option<actix_web::cookie::Cookie<'static>>,
+	database: Arc<crate::database::Database>,
+	config: Arc<crate::config::Config>,
+}
+
+impl Auth {
+	fn get_params(req: &HttpRequest) -> Params {
+		let uri = req.uri().to_string();
+		let token = req.cookie("token");
+		let database = Arc::clone(
+			req
+				.app_data::<WebData<crate::database::Database>>()
+				.expect("Could not get database from app data"),
+		);
+		let config = Arc::clone(
+			req
+				.app_data::<WebData<crate::config::Config>>()
+				.expect("Could not get config from app data"),
+		);
+		Params {
+			uri,
+			token,
+			database,
+			config,
+		}
+	}
+	async fn extract(
+		Params {
+			uri,
+			token,
+			database,
+			config,
+		}: Params,
+	) -> Result<Self, AuthError> {
+		let token = match token {
+			Some(token) => token,
+			None => return Err(AuthError::NoToken { redirect_to: uri }),
+		};
+		let token = crate::token::Token::decrypt(token.value(), &config.cookie_signing_key)
+			.map_err(|_| AuthError::Invalid)?;
+		let token = match token {
+			Some(token) => token,
+			None => return Err(AuthError::Expired { redirect_to: uri }),
+		};
+		let user_id = token.user_id;
+		if let Some(user) = crate::database::models::User::by_id(&*database, user_id).await? {
+			Ok(Self(user))
+		} else {
+			// this user ID was issued by us but is no longer valid, which means the user was deleted.
+			Err(AuthError::UserDeleted { redirect_to: uri })
+		}
+	}
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum AuthError {
 	#[error("no token cookie")]
 	NoToken { redirect_to: String },
+	#[error("you do not have permission to access this page")]
+	Forbidden,
 	#[error("invalid token")]
 	Invalid,
 	#[error("token was expired")]
@@ -31,7 +89,7 @@ impl AuthError {
 			NoToken { redirect_to } | Expired { redirect_to } | UserDeleted { redirect_to } => {
 				Some(redirect_to)
 			}
-			Invalid | Sqlx(_) => None,
+			Forbidden | Invalid | Sqlx(_) => None,
 		}
 	}
 
@@ -40,7 +98,7 @@ impl AuthError {
 		// ditto
 		match self {
 			NoToken { .. } | Expired { .. } | UserDeleted { .. } | Invalid => true,
-			Sqlx(_) => false,
+			Forbidden | Sqlx(_) => false,
 		}
 	}
 }
@@ -52,6 +110,7 @@ impl actix_web::ResponseError for AuthError {
 			// redirect to /login, which will redirect back to the current page after the user logs in
 			NoToken { .. } | Expired { .. } | UserDeleted { .. } => HttpStatus::TEMPORARY_REDIRECT,
 			Invalid => HttpStatus::BAD_REQUEST,
+			Forbidden => HttpStatus::FORBIDDEN,
 			Sqlx(_) => HttpStatus::INTERNAL_SERVER_ERROR,
 		}
 	}
@@ -84,35 +143,25 @@ impl FromRequest for Auth {
 	type Future = impl Future<Output = Result<Self, Self::Error>>;
 
 	fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
-		let uri = req.uri().to_string();
-		let token = req.cookie("token");
-		let database = Arc::clone(
-			req
-				.app_data::<WebData<crate::database::Database>>()
-				.expect("Could not get database from app data"),
-		);
-		let config = Arc::clone(
-			req
-				.app_data::<WebData<crate::config::Config>>()
-				.expect("Could not get config from app data"),
-		);
+		let params = Self::get_params(req);
+		Self::extract(params)
+	}
+}
+
+pub struct Admin(pub User);
+
+impl FromRequest for Admin {
+	type Error = <Auth as FromRequest>::Error;
+	type Future = impl Future<Output = Result<Self, Self::Error>>;
+
+	fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
+		let params = Auth::get_params(req);
 		async move {
-			let token = match token {
-				Some(token) => token,
-				None => return Err(AuthError::NoToken { redirect_to: uri }),
-			};
-			let token = crate::token::Token::decrypt(token.value(), &config.cookie_signing_key)
-				.map_err(|_| AuthError::Invalid)?;
-			let token = match token {
-				Some(token) => token,
-				None => return Err(AuthError::Expired { redirect_to: uri }),
-			};
-			let user_id = token.user_id;
-			if let Some(user) = crate::database::models::User::by_id(&*database, user_id).await? {
-				Ok(Self(user))
+			let Auth(user) = Auth::extract(params).await?;
+			if user.role < models::UserRole::Admin {
+				Err(AuthError::Forbidden)
 			} else {
-				// this user ID was issued by us but is no longer valid, which means the user was deleted.
-				Err(AuthError::UserDeleted { redirect_to: uri })
+				Ok(Self(user))
 			}
 		}
 	}
