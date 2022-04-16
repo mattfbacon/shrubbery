@@ -1,3 +1,0 @@
-address = "127.0.0.1:3000"
-database_url = "postgres://matt@localhost/shrubbery"
-cookie_signing_key = "fJX9YZx6oNta5yeZp1MhZDSHgkyTjD4xGreRdE2ErbU="
