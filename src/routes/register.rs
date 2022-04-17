@@ -70,7 +70,7 @@ pub async fn post_handler(
 		password: models::UserPassword::hash(&request.password).map_err(internal_server_error)?,
 		email: request.email,
 	}
-	.insert(&mut *database.acquire().await.map_err(internal_server_error)?)
+	.insert(&**database)
 	.await
 	.map_err(internal_server_error)?;
 
