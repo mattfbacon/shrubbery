@@ -29,5 +29,5 @@ features = ["chrono", "postgres", "runtime-actix-rustls", "macros", "migrate"]
 
 [dependencies.ormx]
 git = "https://github.com/mattfbacon/ormx"
-rev = "62300774d957692f3d6d135a2937eec299569318"
+rev = "302369039f368314bca16aff9d8d44837d395eb3"
 features = ["postgres"]

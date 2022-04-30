@@ -283,9 +283,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.56"
+version = "1.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4361135be9122e0870de935d7c439aef945b9f9ddd4199a553b5270b49c82a27"
+checksum = "08f9b8508dccb7687a1d6c4ce66b2b0ecef467c94667de27d8d7fe1f8d2a9cdc"
 
 [[package]]
 name = "argon2"
@@ -1258,7 +1258,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "ormx"
 version = "0.10.0"
-source = "git+https://github.com/mattfbacon/ormx?rev=62300774d957692f3d6d135a2937eec299569318#62300774d957692f3d6d135a2937eec299569318"
+source = "git+https://github.com/mattfbacon/ormx?rev=302369039f368314bca16aff9d8d44837d395eb3#302369039f368314bca16aff9d8d44837d395eb3"
 dependencies = [
  "futures",
  "ormx-macros",
@@ -1268,7 +1268,7 @@ dependencies = [
 [[package]]
 name = "ormx-macros"
 version = "0.10.4"
-source = "git+https://github.com/mattfbacon/ormx?rev=62300774d957692f3d6d135a2937eec299569318#62300774d957692f3d6d135a2937eec299569318"
+source = "git+https://github.com/mattfbacon/ormx?rev=302369039f368314bca16aff9d8d44837d395eb3#302369039f368314bca16aff9d8d44837d395eb3"
 dependencies = [
  "itertools",
  "once_cell",
