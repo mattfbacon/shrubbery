@@ -1,14 +1,7 @@
-/* palette: https://coolors.co/palette/335c67-fff3b0-e09f3e-9e2a2b-540b0e */
-
 :root {
 	--space-large: 2rem;
 	--space-medium: 1rem;
 	--space-small: 0.3rem;
-
-	--accent-primary: #e0ab77;
-	--foreground-on-primary: #000;
-	--accent-secondary: #7b7fbd;
-	--foreground-on-secondary: #fff;
 }
 
 body {
@@ -17,22 +10,20 @@ body {
 
 footer#license-notice {
 	font-size: small;
-	margin: var(--space-medium);
 	margin-top: var(--space-large);
 	border-top: 1px solid gray;
 }
 
-form > label ~ input:not([type="checkbox"]) {
+form > label ~ input:not([type="checkbox"]),
+form > label ~ select,
+form > label ~ div.input-group {
 	display: block;
 	margin-bottom: var(--space-medium);
 }
 
 button,
-input[type="text"],
-input[type="password"],
-input[type="submit"],
-input[type="email"],
-input[type="search"] {
+input:not([type="checkbox"]),
+select {
 	padding: var(--space-small);
 }
 
@@ -44,9 +35,8 @@ nav#navbar {
 	display: flex;
 	margin: calc(-1 * var(--space-medium));
 	padding: var(--space-medium);
-	margin-bottom: 0;
-	background-color: var(--accent-primary);
-	color: var(--foreground-on-primary);
+	margin-bottom: var(--space-medium);
+	border-bottom: 1px solid black;
 	gap: var(--space-medium);
 }
 
