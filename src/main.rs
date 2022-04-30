@@ -36,11 +36,9 @@ async fn main_() -> anyhow::Result<()> {
 			ActixApp::new()
 				.app_data(web::Data::from(Arc::clone(&config)))
 				.app_data(web::Data::from(Arc::clone(&database)))
-				.wrap(mid::NormalizePath::trim())
-				.wrap(routes::error_handlers())
-				.configure(routes::configure)
-				.service(actix_files::Files::new("/", "static"))
 				.wrap(mid::Logger::default())
+				.configure(routes::configure)
+				.wrap(mid::NormalizePath::trim())
 		})
 	};
 	if let Some(num_workers) = config.num_workers {
