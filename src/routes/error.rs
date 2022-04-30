@@ -1,45 +1,49 @@
-use actix_web::body::BoxBody;
-use actix_web::dev::ServiceResponse;
+use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::StatusCode as HttpStatus;
-use actix_web::middleware::ErrorHandlerResponse;
-use actix_web::middleware::ErrorHandlers;
-use actix_web::Responder as _;
+use actix_web::HttpResponse;
 
-pub fn error_handlers() -> ErrorHandlers<BoxBody> {
-	#[derive(askama::Template)]
-	#[template(path = "error.html")]
-	struct ErrorTemplate {
-		code: u16,
-		description: String,
-		associated_error: Option<String>,
-	}
+#[derive(askama::Template)]
+#[template(path = "error.html")]
+struct Template {
+	code: u16,
+	description: Option<&'static str>,
+	associated_error: String,
+}
 
-	let mut handlers = ErrorHandlers::new();
-	for handled in [
-		// HttpStatus::BAD_REQUEST,
-		// HttpStatus::UNAUTHORIZED,
-		// HttpStatus::FORBIDDEN,
-		HttpStatus::NOT_FOUND,
-		// HttpStatus::METHOD_NOT_ALLOWED,
-		HttpStatus::INTERNAL_SERVER_ERROR,
-	] {
-		handlers = handlers.handler(handled, move |old: ServiceResponse| {
-			let response = ErrorTemplate {
-				code: handled.as_u16(),
-				description: handled.canonical_reason().unwrap_or("").to_owned(),
-				associated_error: old.response().error().map(|err| err.to_string()),
-			};
-			let response = response
-				.customize()
-				.with_status(handled)
-				.respond_to(old.request());
-			Ok(ErrorHandlerResponse::Response(
-				old
-					.into_response(response)
-					.map_into_boxed_body()
-					.map_into_left_body(),
-			))
-		});
+pub fn error_response<E>(error: &E) -> HttpResponse
+where
+	E: actix_web::ResponseError + std::error::Error,
+{
+	use askama::Template as _;
+	let status_code = error.status_code();
+	let template = Template {
+		code: status_code.as_u16(),
+		description: status_code.canonical_reason(),
+		associated_error: error.to_string(),
+	};
+	match template.render() {
+		Ok(template) => HttpResponse::build(status_code)
+			.insert_header(("Content-Type", "text/html"))
+			.body(template),
+		Err(error) => HttpResponse::build(HttpStatus::INTERNAL_SERVER_ERROR).body(error.to_string()),
 	}
-	handlers
+}
+
+pub async fn default_handler(req: ServiceRequest) -> Result<ServiceResponse, actix_web::Error> {
+	use askama::Template as _;
+
+	let req = req.into_parts().0;
+	let res = Template {
+		code: 404,
+		description: Some("Not Found"),
+		associated_error: "Page not found".to_string(),
+	}
+	.render()
+	.unwrap();
+	Ok(ServiceResponse::new(
+		req,
+		HttpResponse::Ok()
+			.insert_header(("Content-Type", Template::MIME_TYPE))
+			.body(res),
+	))
 }
