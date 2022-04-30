@@ -6,7 +6,7 @@
 {% block content %}
 {% include "partials/navbar.html" %}
 
-<h1>Hello, {{user.username}} ({{user.role}})</h1>
+<h1>Hello, {{self_user.username}} ({{self_user.role}})</h1>
 
 <form method="get" action="/search">
 	<label for="search">Query:</label>

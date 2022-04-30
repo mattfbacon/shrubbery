@@ -6,10 +6,10 @@ use askama::Template;
 #[derive(Template)]
 #[template(path = "home.html")]
 struct WelcomeTemplate {
-	user: User,
+	self_user: User,
 }
 
 #[actix_web::get("/")]
-pub async fn handler(Auth(user): Auth) -> impl Responder {
-	WelcomeTemplate { user }
+pub async fn handler(Auth(self_user): Auth) -> impl Responder {
+	WelcomeTemplate { self_user }
 }
