@@ -3,32 +3,14 @@ use ormx::Table;
 
 pub mod color;
 pub mod user_crypt;
+pub mod user_role;
 
 pub use color::Color;
 pub use user_crypt::PasswordHash as UserPassword;
+pub use user_role::UserRole;
 
 type Id = i32;
 type BigId = i64;
-
-#[derive(sqlx::Type, Debug, PartialEq, Eq, PartialOrd, Ord)]
-#[sqlx(type_name = "user_role")]
-#[sqlx(rename_all = "snake_case")]
-pub enum UserRole {
-	Viewer,
-	Editor,
-	Admin,
-}
-
-impl std::fmt::Display for UserRole {
-	fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		use UserRole::*;
-		formatter.write_str(match self {
-			Viewer => "viewer",
-			Editor => "editor",
-			Admin => "admin",
-		})
-	}
-}
 
 pub type UserId = Id;
 #[derive(Table)]
