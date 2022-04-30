@@ -151,7 +151,7 @@ impl FromRequest for Admin {
 	type Error = <Auth as FromRequest>::Error;
 	type Future = impl Future<Output = Result<Self, Self::Error>>;
 
-	fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
+	fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
 		let params = Auth::get_params(req);
 		async move {
 			let Auth(user) = Auth::extract(params).await?;
