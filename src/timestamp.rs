@@ -11,3 +11,53 @@ pub fn now() -> Timestamp {
 pub fn is_in_past(t: &Timestamp) -> bool {
 	t < &now()
 }
+
+/// for `#[serde(with)]`
+pub mod html_date {
+	use super::Date;
+	use chrono::Utc;
+	use serde::de::{self, Deserialize, Deserializer};
+	use serde::ser::{Serialize, Serializer};
+
+	pub static FORMAT: &str = "%Y-%m-%d";
+	pub fn format(date: &Date) -> impl std::fmt::Display {
+		date.naive_utc().format(FORMAT)
+	}
+
+	pub fn serialize<S: Serializer>(date: &Date, serializer: S) -> Result<S::Ok, S::Error> {
+		format(date).to_string().serialize(serializer)
+	}
+
+	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Date, D::Error>
+	where
+		D::Error: de::Error,
+	{
+		let raw = <std::borrow::Cow<'_, str>>::deserialize(deserializer)?;
+		let naive = chrono::NaiveDate::parse_from_str(&raw, FORMAT).map_err(de::Error::custom)?;
+		Ok(Date::from_utc(naive, Utc))
+	}
+}
+
+/// for `#[serde(with)]`
+pub mod html_time {
+	use super::Time;
+	use serde::de::{self, Deserialize, Deserializer};
+	use serde::ser::{Serialize, Serializer};
+
+	pub static FORMAT: &str = "%T%.f";
+	pub fn format(time: &Time) -> impl std::fmt::Display {
+		time.format(FORMAT)
+	}
+
+	pub fn serialize<S: Serializer>(time: &Time, serializer: S) -> Result<S::Ok, S::Error> {
+		format(time).to_string().serialize(serializer)
+	}
+
+	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Time, D::Error>
+	where
+		D::Error: de::Error,
+	{
+		let raw = <std::borrow::Cow<'_, str>>::deserialize(deserializer)?;
+		chrono::NaiveTime::parse_from_str(&raw, FORMAT).map_err(de::Error::custom)
+	}
+}
