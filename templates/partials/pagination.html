@@ -1,0 +1,9 @@
+<p class="pagination">
+	{% if let Some(prev_page) = self.prev_page() -%}
+		<a href="{{prev_page.href()}}">Previous</a>&nbsp;
+	{%- endif -%}
+	<span class="pagination-page">Page {{inner.page + 1}} of {{num_pages}}</span>
+	{%- if let Some(next_page) = self.next_page() -%}
+		&nbsp;<a href="{{next_page.href()}}">Next</a>
+	{%- endif %}
+</p>
