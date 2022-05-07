@@ -1,8 +1,9 @@
 use std::fmt::{self, Display, Formatter};
 
-#[derive(sqlx::Type, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(sqlx::Type, Debug, serde::Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[sqlx(type_name = "user_role")]
 #[sqlx(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum UserRole {
 	Viewer,
 	Editor,
