@@ -3,12 +3,12 @@ use crate::helpers::auth;
 use actix_web::error::InternalError;
 use actix_web::http::StatusCode as HttpStatus;
 use actix_web::web::{self, ServiceConfig};
-use actix_web::{post, HttpResponse, Responder, HttpRequest};
+use actix_web::{post, HttpRequest, HttpResponse, Responder};
 use ormx::Delete as _;
 
 #[post("/admin/users/{user_id}/delete")]
 pub async fn post_handler(
-	auth::Admin(self_user): auth::Admin,
+	auth::Admin(_self_user): auth::Admin,
 	req: HttpRequest,
 	path: web::Path<(models::UserId,)>,
 	database: web::Data<Database>,

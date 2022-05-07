@@ -10,7 +10,7 @@ pub struct PostData {
 
 #[post("/admin/sql")]
 pub async fn post_handler(
-	Admin(self_user): Admin,
+	Admin(_self_user): Admin,
 	web::Form(PostData { sql }): web::Form<PostData>,
 	database: web::Data<Database>,
 ) -> impl Responder {

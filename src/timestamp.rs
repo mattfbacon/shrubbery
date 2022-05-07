@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use chrono::Utc;
 
 pub type Timestamp = chrono::DateTime<Utc>;

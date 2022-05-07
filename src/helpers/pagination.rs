@@ -48,16 +48,6 @@ impl Template {
 		)
 	}
 
-	fn replace_page(&self, new: PageNum) -> Self {
-		Self {
-			num_pages: self.num_pages,
-			inner: Query {
-				page: new,
-				page_size: self.inner.page_size,
-			},
-		}
-	}
-
 	pub fn next_page(mut self) -> Option<Self> {
 		self.inner.page = self.inner.page.checked_add(1)?;
 		if self.inner.page < self.num_pages {
