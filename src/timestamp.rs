@@ -1,6 +1,8 @@
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
-pub type Timestamp = DateTime<Utc>;
+pub type Timestamp = chrono::DateTime<Utc>;
+pub type Date = chrono::Date<Utc>;
+pub type Time = chrono::NaiveTime;
 
 pub fn now() -> Timestamp {
 	Utc::now()
