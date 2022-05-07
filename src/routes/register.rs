@@ -1,5 +1,5 @@
 use crate::database::{models, Database};
-use crate::helpers::internal_server_error;
+use crate::helpers::{internal_server_error, set_none_if_empty};
 use crate::percent::PercentEncodedString;
 use actix_web::http::StatusCode as HttpStatus;
 use actix_web::web::{Data, Form, Query};
@@ -31,14 +31,6 @@ pub struct RegisterRequest {
 	email: Option<String>,
 }
 
-impl RegisterRequest {
-	fn normalize(&mut self) {
-		if self.email.as_deref() == Some("") {
-			self.email = None;
-		}
-	}
-}
-
 #[post("/register")]
 pub async fn post_handler(
 	Form(mut request): Form<RegisterRequest>,
@@ -52,7 +44,7 @@ pub async fn post_handler(
 		};
 	}
 
-	request.normalize();
+	set_none_if_empty(&mut request.email);
 	if request.password != request.confirm_password {
 		return err!("Passwords do not match");
 	}

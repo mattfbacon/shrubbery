@@ -11,3 +11,9 @@ pub fn remove_cookie(name: &str) -> Cookie<'_> {
 	ret.make_removal();
 	ret
 }
+
+pub fn set_none_if_empty(opt: &mut Option<String>) {
+	if opt.as_deref() == Some("") {
+		*opt = None;
+	}
+}
