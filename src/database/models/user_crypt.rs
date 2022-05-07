@@ -34,6 +34,7 @@ impl PasswordHash {
 	}
 }
 
+/// create a `PasswordHash` object from an encoded representation of an existing hash
 impl TryFrom<String> for PasswordHash {
 	type Error = password_hash::Error;
 
