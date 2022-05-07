@@ -94,3 +94,8 @@ pub async fn post_handler(
 			.body("redirecting shortly!"),
 	))
 }
+
+pub fn configure(app: &mut actix_web::web::ServiceConfig) {
+	app.service(get_handler);
+	app.service(post_handler);
+}

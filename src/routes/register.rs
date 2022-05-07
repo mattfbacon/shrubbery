@@ -75,3 +75,8 @@ pub async fn post_handler(
 		.finish();
 	Ok(Either::Right(response))
 }
+
+pub fn configure(app: &mut actix_web::web::ServiceConfig) {
+	app.service(get_handler);
+	app.service(post_handler);
+}
