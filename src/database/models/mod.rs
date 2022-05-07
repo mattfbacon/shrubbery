@@ -18,12 +18,13 @@ pub type UserId = Id;
 pub struct User {
 	#[ormx(get_optional = by_id(UserId))]
 	pub id: UserId,
-	#[ormx(get_optional = by_username(&str))]
+	#[ormx(get_optional = by_username(&str), set)]
 	pub username: String,
-	#[ormx(custom_type, by_ref)]
+	#[ormx(custom_type, by_ref, set, set_as_wildcard)]
 	pub password: UserPassword,
+	#[ormx(set)]
 	pub email: Option<String>,
-	#[ormx(default, custom_type, by_ref)]
+	#[ormx(default, custom_type, set)]
 	pub role: UserRole,
 	#[ormx(default)]
 	pub created_time: Timestamp,
