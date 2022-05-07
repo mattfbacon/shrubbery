@@ -1,0 +1,50 @@
+<!-- prettier-ignore -->
+{% extends "layouts/default.html" %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+{% include "partials/navbar.html" %}
+
+<table>
+	<thead>
+		<tr>
+			<th>Edit</th>
+			<th>Username</th>
+			<th>Email</th>
+			<th>Role</th>
+			<th>Created Time</th>
+			<th>Last Login</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for user in users %}
+		<tr>
+			<td><a href="/admin/users/{{user.id}}">Edit</a></td>
+			<td>{{user.username}}</td>
+			<td>{{user.email.as_deref().unwrap_or("(none)")}}</td>
+			<td>{{user.role.to_string()|capitalize}}</td>
+			<td>{{user.created_time}}</td>
+			<td>
+				{%- if let Some(last_login) = user.last_login -%}
+					{{last_login}}
+				{%- else -%}
+					Never
+				{%- endif -%}
+			</td>
+			{# don't forget the page when deleting a user #}
+			<td><form method="post" action="/admin/users/{{user.id}}/delete{{pagination.href()}}"><input type="submit" value="Delete"></form></td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+{{pagination|safe}}
+
+<form method="post">
+	<label for="sql">Run some SQL!</label>
+	<textarea id="sql" required name="sql" placeholder="SELECT * FROM users"></textarea>
+	<input type="submit">
+</form>
+
+{% endblock %}

@@ -1,0 +1,14 @@
+<!-- prettier-ignore -->
+{% extends "layouts/default.html" %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+{% include "partials/navbar.html" %}
+
+<ul>
+	<li><a href="/admin/users">Manage Users</a></li>
+	<li><a href="/admin/tagcats">Manage Tag Categories</a></li>
+</ul>
+
+{% endblock %}

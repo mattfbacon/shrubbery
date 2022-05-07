@@ -16,6 +16,7 @@ footer#license-notice {
 
 form > label ~ input:not([type="checkbox"]),
 form > label ~ select,
+form > label ~ textarea,
 form > label ~ div.input-group {
 	display: block;
 	margin-bottom: var(--space-medium);
@@ -46,4 +47,9 @@ nav#navbar > div.spacer {
 
 nav#navbar a {
 	color: inherit;
+}
+
+.form-warning {
+	font-size: small;
+	color: red;
 }
