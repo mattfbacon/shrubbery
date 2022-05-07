@@ -32,6 +32,20 @@ pub struct User {
 	pub last_login: Option<Timestamp>,
 }
 
+impl User {
+	pub async fn count(
+		database: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+	) -> sqlx::Result<i64> {
+		struct Helper {
+			count: i64,
+		}
+		sqlx::query_as!(Helper, r#"SELECT count(*) as "count!" FROM users"#)
+			.fetch_one(database)
+			.await
+			.map(|helper| helper.count)
+	}
+}
+
 pub type FileId = BigId;
 #[derive(Table)]
 #[ormx(table = "files", insertable, deletable)]
