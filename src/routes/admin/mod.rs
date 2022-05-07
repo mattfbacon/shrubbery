@@ -2,6 +2,7 @@ use crate::database::models::User;
 use crate::helpers::auth::Admin;
 use actix_web::{get, Responder};
 
+pub mod sql;
 pub mod users;
 
 #[derive(askama::Template)]
@@ -17,5 +18,6 @@ pub async fn handler(Admin(self_user): Admin) -> impl Responder {
 
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
 	app.service(handler);
+	sql::configure(app);
 	users::configure(app);
 }

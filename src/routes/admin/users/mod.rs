@@ -2,7 +2,7 @@ use crate::database::{models, Database};
 use crate::helpers::auth::Admin;
 use crate::helpers::pagination;
 use actix_web::http::StatusCode as HttpStatus;
-use actix_web::{get, post, web, Responder, ResponseError};
+use actix_web::{get, web, Responder, ResponseError};
 
 mod delete;
 mod edit;
@@ -68,24 +68,8 @@ pub async fn get_handler(
 	})
 }
 
-#[derive(serde::Deserialize)]
-pub struct PostData {
-	sql: String,
-}
-
-#[post("/admin/users")]
-pub async fn post_handler(
-	Admin(self_user): Admin,
-	web::Form(PostData { sql }): web::Form<PostData>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
-	let result = sqlx::query(&sql).execute(&**database).await;
-	Ok(format!("{:#?}", result))
-}
-
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
 	app.service(get_handler);
-	app.service(post_handler);
 	delete::configure(app);
 	edit::configure(app);
 }
