@@ -9,19 +9,18 @@
 <table>
 	<thead>
 		<tr>
-			<th></th>
 			<th>Username</th>
 			<th>Email</th>
 			<th>Role</th>
 			<th>Created Time</th>
 			<th>Last Login</th>
 			<th></th>
+			<th></th>
 		</tr>
 	</thead>
 	<tbody>
 		{% for user in users %}
 		<tr>
-			<td><a href="/admin/users/{{user.id}}">Edit</a></td>
 			<td>{{user.username}}</td>
 			<td>{{user.email.as_deref().unwrap_or("(none)")}}</td>
 			<td>{{user.role.to_string()|capitalize}}</td>
@@ -33,6 +32,7 @@
 					Never
 				{%- endif -%}
 			</td>
+			<td><a href="/admin/users/{{user.id}}">Edit</a></td>
 			{# don't forget the page when deleting a user #}
 			<td><form method="post" action="/admin/users/{{user.id}}/delete{{pagination.href()}}"><input type="submit" value="Delete"></form></td>
 		</tr>
