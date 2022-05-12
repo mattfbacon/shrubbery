@@ -13,7 +13,7 @@ pub struct Color {
 
 impl Color {
 	pub fn to_hex(self) -> String {
-		format!("#{:2x}{:2x}{:2x}", self.red, self.green, self.blue)
+		format!("#{:02x}{:02x}{:02x}", self.red, self.green, self.blue)
 	}
 
 	pub fn from_hex(hex: &str) -> Result<Self, ColorFromHexError> {
@@ -72,5 +72,33 @@ impl FromStr for Color {
 	type Err = ColorFromHexError;
 	fn from_str(hex: &str) -> Result<Self, Self::Err> {
 		Self::from_hex(hex)
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::Color;
+
+	#[test]
+	fn to_hex() {
+		assert_eq!(
+			Color {
+				red: 0,
+				green: 0,
+				blue: 0
+			}
+			.to_hex(),
+			"#000000"
+		);
+
+		assert_eq!(
+			Color {
+				red: 0x01,
+				green: 0x34,
+				blue: 0x56,
+			}
+			.to_hex(),
+			"#013456"
+		);
 	}
 }
