@@ -13,7 +13,7 @@
 <h1>Edit User</h1>
 <form method="post">
 	<label for="user_id">User ID</label>
-	<input type="number" id="user_id" required disabled value="{{requested_user.id}}" />
+	<input type="number" id="user_id" disabled value="{{requested_user.id}}" />
 	<label for="username">Username</label>
 	<input type="text" id="username" name="username" value="{{requested_user.username}}" required />
 	<label for="password">Password</label>
@@ -29,8 +29,8 @@
 	{%- endif %}
 	<label for="created_time">Created Time</label>
 	<div id="created_time" class="input-group">
-		<input type="date" required disabled value="{{requested_user.created_time.date().format(crate::timestamp::html_date::FORMAT)}}" />
-		<input type="time" required disabled value="{{requested_user.created_time.time().format("%T")}}" />
+		<input type="date" disabled value="{{requested_user.created_time.date().format(crate::timestamp::html_date::FORMAT)}}" />
+		<input type="time" disabled value="{{requested_user.created_time.time().format("%T")}}" />
 	</div>
 	<div class="input-group">
 		<input type="submit" value="Edit" />
