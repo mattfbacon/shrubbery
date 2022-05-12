@@ -1,0 +1,36 @@
+<!-- prettier-ignore -->
+{% extends "layouts/default.html" %}
+
+{% block title %}Edit Tag Category{% endblock %}
+
+{% block content %}
+{% include "partials/navbar.html" %}
+
+{% if updated %}
+<p>Updated the tag category</p>
+{% endif %}
+
+<h1>Edit Tag Category</h1>
+<form method="post">
+	<label for="id">Tag Category ID</label>
+	<input type="number" id="id" disabled value="{{requested_tag_category.id}}" />
+	<label for="name">Name</label>
+	<input type="text" id="name" name="name" value="{{requested_tag_category.name}}" required />
+	<label for="description">Description</label>
+	<input type="text" id="description" name="description" value="{{requested_tag_category.description.as_deref().unwrap_or("")}}" placeholder="(no description)" required />
+	<label for="color">Color</label>
+	<input type="color" name="color" id="color" value="{{requested_tag_category.color.to_hex()}}" />
+	<label for="created_time">Created Time</label>
+	<div id="created_time" class="input-group">
+		<input type="date" disabled value="{{requested_tag_category.created_time.date().format(crate::timestamp::html_date::FORMAT)}}" />
+		<input type="time" disabled value="{{requested_tag_category.created_time.time().format("%T")}}" />
+	</div>
+	<label for="created_by">Created By</label>
+	<input type="text" id="created_by" disabled value="{{created_by_username.as_deref().unwrap_or("(deleted)")}}">
+	<div class="input-group">
+		<input type="submit" value="Edit" />
+		<input type="reset" value="Reset" />
+	</div>
+</form>
+
+{% endblock %}
