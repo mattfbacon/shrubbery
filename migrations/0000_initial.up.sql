@@ -19,8 +19,9 @@ CREATE TABLE files (
 
 CREATE DOMAIN color AS char(7) CHECK (VALUE ~ '^#[0-9a-f]{6}$');
 
-CREATE FUNCTION require_created_by() RETURNS TRIGGER LANGUAGE PLPGSQL AS $func$ BEGIN
+CREATE OR REPLACE FUNCTION require_created_by() RETURNS TRIGGER LANGUAGE PLPGSQL AS $func$ BEGIN
 	ASSERT NEW.created_by IS NOT NULL, 'Cannot create this ' || TG_ARGV[0] || ' without a created_by user; created_by can only be NULL if the creator user is deleted after the ' || TG_ARGV[0] || 'is created';
+	RETURN NEW;
 END $func$;
 
 CREATE TABLE tag_categories (
