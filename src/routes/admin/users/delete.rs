@@ -1,10 +1,8 @@
 use crate::database::{models, Database};
 use crate::helpers::auth;
-use actix_web::web::{self, ServiceConfig};
-use actix_web::{post, HttpRequest, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use ormx::Delete as _;
 
-#[post("/admin/users/{user_id}/delete")]
 pub async fn post_handler(
 	auth::Admin(_self_user): auth::Admin,
 	req: HttpRequest,
@@ -20,6 +18,6 @@ pub async fn post_handler(
 	)
 }
 
-pub fn configure(app: &mut ServiceConfig) {
-	app.service(post_handler);
+pub fn configure(app: &mut web::ServiceConfig) {
+	app.service(web::resource("/admin/users/{user_id}/delete").route(web::post().to(post_handler)));
 }

@@ -1,6 +1,6 @@
 use crate::database::{models, Database};
 use crate::helpers::{auth, set_none_if_empty};
-use actix_web::{get, post, web, Responder};
+use actix_web::{web, Responder};
 
 use super::Error;
 
@@ -12,7 +12,6 @@ struct Template {
 	requested_user: models::User,
 }
 
-#[get("/admin/users/{user_id}")]
 pub async fn get_handler(
 	auth::Admin(self_user): auth::Admin,
 	path: web::Path<(models::UserId,)>,
@@ -37,7 +36,6 @@ pub struct EditRequest {
 	role: models::UserRole,
 }
 
-#[post("/admin/users/{user_id}")]
 pub async fn post_handler(
 	auth::Admin(self_user): auth::Admin,
 	path: web::Path<(models::UserId,)>,
@@ -73,7 +71,10 @@ pub async fn post_handler(
 	})
 }
 
-pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(get_handler);
-	app.service(post_handler);
+pub fn configure(app: &mut web::ServiceConfig) {
+	app.service(
+		web::resource("/admin/users/{user_id}")
+			.route(web::get().to(get_handler))
+			.route(web::post().to(post_handler)),
+	);
 }

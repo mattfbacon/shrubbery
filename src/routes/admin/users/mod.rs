@@ -2,7 +2,7 @@ use crate::database::{models, Database};
 use crate::helpers::auth::Admin;
 use crate::helpers::pagination;
 use actix_web::http::StatusCode as HttpStatus;
-use actix_web::{get, web, Responder, ResponseError};
+use actix_web::{web, Responder, ResponseError};
 
 mod delete;
 mod edit;
@@ -42,7 +42,6 @@ impl ResponseError for Error {
 	}
 }
 
-#[get("/admin/users")]
 pub async fn get_handler(
 	Admin(self_user): Admin,
 	web::Query(pagination): web::Query<pagination::Query>,
@@ -69,7 +68,7 @@ pub async fn get_handler(
 }
 
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(get_handler);
+	app.service(web::resource("/admin/users").route(web::get().to(get_handler)));
 	delete::configure(app);
 	edit::configure(app);
 }

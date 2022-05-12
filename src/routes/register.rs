@@ -2,8 +2,7 @@ use crate::database::{models, Database};
 use crate::helpers::{internal_server_error, set_none_if_empty};
 use crate::percent::PercentEncodedString;
 use actix_web::http::StatusCode as HttpStatus;
-use actix_web::web::{Data, Form, Query};
-use actix_web::{get, post, Either, HttpResponse, Responder};
+use actix_web::{web, Either, HttpResponse, Responder};
 use serde::Deserialize;
 
 use super::login::ReturnUrl;
@@ -15,8 +14,9 @@ struct RegisterTemplate {
 	return_url: Option<PercentEncodedString>,
 }
 
-#[get("/register")]
-pub async fn get_handler(Query(ReturnUrl { return_url }): Query<ReturnUrl>) -> impl Responder {
+pub async fn get_handler(
+	web::Query(ReturnUrl { return_url }): web::Query<ReturnUrl>,
+) -> impl Responder {
 	RegisterTemplate {
 		error: None,
 		return_url,
@@ -31,11 +31,10 @@ pub struct RegisterRequest {
 	email: Option<String>,
 }
 
-#[post("/register")]
 pub async fn post_handler(
-	Form(mut request): Form<RegisterRequest>,
-	Query(ReturnUrl { return_url }): Query<ReturnUrl>,
-	database: Data<Database>,
+	web::Form(mut request): web::Form<RegisterRequest>,
+	web::Query(ReturnUrl { return_url }): web::Query<ReturnUrl>,
+	database: web::Data<Database>,
 ) -> actix_web::Result<Either</* private */ impl Responder, HttpResponse>> {
 	use ormx::Insert as _;
 	macro_rules! err {
@@ -77,6 +76,9 @@ pub async fn post_handler(
 }
 
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(get_handler);
-	app.service(post_handler);
+	app.service(
+		web::resource("/register")
+			.route(web::get().to(get_handler))
+			.route(web::post().to(post_handler)),
+	);
 }

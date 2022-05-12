@@ -4,8 +4,7 @@ use crate::database::Database;
 use crate::helpers::internal_server_error;
 use crate::percent::PercentEncodedString;
 use actix_web::http::StatusCode as HttpStatus;
-use actix_web::web::{Data, Form, Query};
-use actix_web::{get, post, Either, HttpResponse, Responder};
+use actix_web::{web, Either, HttpResponse, Responder};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -21,8 +20,9 @@ struct LoginTemplate {
 	return_url: Option<PercentEncodedString>,
 }
 
-#[get("/login")]
-pub async fn get_handler(Query(ReturnUrl { return_url }): Query<ReturnUrl>) -> impl Responder {
+pub async fn get_handler(
+	web::Query(ReturnUrl { return_url }): web::Query<ReturnUrl>,
+) -> impl Responder {
 	LoginTemplate {
 		error: None,
 		return_url,
@@ -41,16 +41,15 @@ const fn default_keep_logged_in() -> bool {
 	false
 }
 
-#[post("/login")]
 pub async fn post_handler(
-	Form(LoginRequest {
+	web::Form(LoginRequest {
 		username,
 		password,
 		keep_logged_in,
-	}): Form<LoginRequest>,
-	Query(ReturnUrl { return_url }): Query<ReturnUrl>,
-	database: Data<Database>,
-	config: Data<Config>,
+	}): web::Form<LoginRequest>,
+	web::Query(ReturnUrl { return_url }): web::Query<ReturnUrl>,
+	database: web::Data<Database>,
+	config: web::Data<Config>,
 ) -> actix_web::Result<Either</* private */ impl Responder, HttpResponse>> {
 	macro_rules! err {
 		($($tok:tt)+) => {
@@ -96,6 +95,9 @@ pub async fn post_handler(
 }
 
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(get_handler);
-	app.service(post_handler);
+	app.service(
+		web::resource("/login")
+			.route(web::get().to(get_handler))
+			.route(web::post().to(post_handler)),
+	);
 }
