@@ -1,6 +1,7 @@
 use sqlx::encode::IsNull;
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo, PgValueRef};
 use sqlx::{Decode, Encode, Postgres, Type};
+use std::borrow::Cow;
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -72,6 +73,22 @@ impl FromStr for Color {
 	type Err = ColorFromHexError;
 	fn from_str(hex: &str) -> Result<Self, Self::Err> {
 		Self::from_hex(hex)
+	}
+}
+
+impl serde::Serialize for Color {
+	fn serialize<S: serde::ser::Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+		serde::Serialize::serialize(&self.to_hex(), ser)
+	}
+}
+
+impl<'de> serde::Deserialize<'de> for Color {
+	fn deserialize<D: serde::de::Deserializer<'de>>(de: D) -> Result<Self, D::Error>
+	where
+		D::Error: serde::de::Error,
+	{
+		<Cow<'de, str>>::deserialize(de)
+			.and_then(|raw| Self::from_hex(&raw).map_err(serde::de::Error::custom))
 	}
 }
 
