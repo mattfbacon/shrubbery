@@ -28,7 +28,7 @@ CREATE TABLE tag_categories (
 	id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	name VARCHAR NOT NULL UNIQUE,
 	description VARCHAR,
-	color color,
+	color color NOT NULL,
 	created_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	created_by INTEGER REFERENCES users ON DELETE SET NULL -- null = user was deleted
 );

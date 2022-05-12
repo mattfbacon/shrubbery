@@ -63,7 +63,7 @@ pub struct TagCategory {
 	pub name: String,
 	pub description: Option<String>,
 	#[ormx(custom_type)]
-	pub color: Option<Color>,
+	pub color: Color,
 	#[ormx(default)]
 	pub created_time: Timestamp,
 	pub created_by: Option<UserId>,
