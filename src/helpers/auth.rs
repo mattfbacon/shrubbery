@@ -109,7 +109,7 @@ impl actix_web::ResponseError for AuthError {
 		use AuthError::*;
 		match self {
 			// redirect to /login, which will redirect back to the current page after the user logs in
-			NoToken { .. } | Expired { .. } | UserDeleted { .. } => HttpStatus::TEMPORARY_REDIRECT,
+			NoToken { .. } | Expired { .. } | UserDeleted { .. } => HttpStatus::SEE_OTHER,
 			Invalid => HttpStatus::BAD_REQUEST,
 			Forbidden => HttpStatus::FORBIDDEN,
 			Sqlx(_) => HttpStatus::INTERNAL_SERVER_ERROR,
