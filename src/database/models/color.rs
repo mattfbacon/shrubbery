@@ -39,18 +39,17 @@ pub enum ColorFromHexError {
 
 impl Type<Postgres> for Color {
 	fn type_info() -> PgTypeInfo {
-		PgTypeInfo::with_name("color")
+		String::type_info()
+	}
+
+	fn compatible(ty: &PgTypeInfo) -> bool {
+		String::compatible(ty)
 	}
 }
 
-#[derive(Type)]
-#[sqlx(type_name = "color")]
-#[repr(transparent)]
-struct ColorProxy(String);
-
 impl Encode<'_, Postgres> for Color {
 	fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> IsNull {
-		ColorProxy(self.to_hex()).encode_by_ref(buf)
+		self.to_hex().encode_by_ref(buf)
 	}
 
 	fn produces(&self) -> Option<PgTypeInfo> {
@@ -65,7 +64,7 @@ impl Encode<'_, Postgres> for Color {
 
 impl<'r> Decode<'r, Postgres> for Color {
 	fn decode(value: PgValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
-		Ok(Self::from_hex(&ColorProxy::decode(value)?.0)?)
+		Ok(Self::from_hex(&<Cow<'_, str>>::decode(value)?)?)
 	}
 }
 
