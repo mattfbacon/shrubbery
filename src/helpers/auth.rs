@@ -145,21 +145,31 @@ impl FromRequest for Auth {
 	}
 }
 
-pub struct Admin(pub User);
+macro_rules! role_extractor {
+	($both:ident) => {
+		role_extractor!($both, $both);
+	};
+	($extractor_name:ident, $min_role:ident) => {
+		pub struct $extractor_name(pub User);
 
-impl FromRequest for Admin {
-	type Error = <Auth as FromRequest>::Error;
-	type Future = impl Future<Output = Result<Self, Self::Error>>;
+		impl FromRequest for $extractor_name {
+			type Error = <Auth as FromRequest>::Error;
+			type Future = impl Future<Output = Result<Self, Self::Error>>;
 
-	fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
-		let params = Auth::get_params(req);
-		async move {
-			let Auth(user) = Auth::extract(params).await?;
-			if user.role < models::UserRole::Admin {
-				Err(AuthError::Forbidden)
-			} else {
-				Ok(Self(user))
+			fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+				let params = Auth::get_params(req);
+				async move {
+					let Auth(user) = Auth::extract(params).await?;
+					if user.role < models::UserRole::$min_role {
+						Err(AuthError::Forbidden)
+					} else {
+						Ok(Self(user))
+					}
+				}
 			}
 		}
-	}
+	};
 }
+
+role_extractor!(Admin);
+role_extractor!(Editor);
