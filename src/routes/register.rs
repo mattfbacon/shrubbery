@@ -56,7 +56,7 @@ pub async fn post_handler(
 		return err!("Username taken");
 	}
 
-	models::InsertUser {
+	models::user::Create {
 		username: request.username,
 		password: models::UserPassword::hash(&request.password).map_err(internal_server_error)?,
 		email: request.email,

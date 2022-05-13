@@ -85,7 +85,7 @@ pub async fn post_handler(
 ) -> Result<impl Responder, Error> {
 	use ormx::Insert as _;
 
-	models::CreateTagCategory {
+	models::tag_category::Create {
 		name: req.name,
 		description: if req.description.is_empty() {
 			None
