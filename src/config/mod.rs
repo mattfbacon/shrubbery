@@ -2,7 +2,6 @@ use crate::token::Key as TokenKey;
 use log::LevelFilter;
 use serde::Deserialize;
 
-pub mod bindable;
 pub use bindable::BindableAddr;
 
 #[derive(Deserialize)]

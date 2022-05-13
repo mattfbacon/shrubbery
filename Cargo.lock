@@ -414,6 +414,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bindable"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e863179e212de7eb57f921d277c441abaef1cc4009114164f8a1538c5eeca18"
+dependencies = [
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1647,6 +1657,7 @@ dependencies = [
  "askama_actix",
  "base64",
  "bincode",
+ "bindable",
  "chrono",
  "figment",
  "log",
