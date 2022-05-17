@@ -42,10 +42,6 @@
 
 {{pagination|safe}}
 
-<form method="post" action="/admin/sql">
-	<label for="sql">Run some SQL!</label>
-	<textarea id="sql" required name="sql" placeholder="SELECT * FROM users"></textarea>
-	<input type="submit">
-</form>
+{% include "partials/run_sql.html" %}
 
 {% endblock %}
