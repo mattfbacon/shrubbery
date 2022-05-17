@@ -5,13 +5,14 @@ use ormx::Table;
 pub type TagId = Id;
 
 #[derive(Table)]
-#[ormx(table = "tags", insertable, deletable)]
+#[ormx(table = "tags", insertable = Create, deletable)]
 pub struct Tag {
 	#[ormx(get_optional = by_id(TagId))]
 	pub id: TagId,
 	pub name: String,
 	pub description: Option<String>,
 	pub category: Option<TagCategoryId>,
+	#[ormx(default)]
 	pub created_time: Timestamp,
 	pub created_by: Option<UserId>,
 }
