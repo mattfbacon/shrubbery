@@ -1,0 +1,69 @@
+<!-- prettier-ignore -->
+{% extends "layouts/default.html" %}
+
+{% block title -%}
+	{% let edit_perm = self_user.role >= models::UserRole::Editor %}
+	{%- if edit_perm -%}
+		Manage Tags
+	{%- else -%}
+		Tags
+	{%- endif -%}
+{%- endblock %}
+
+{% block content %}
+{% include "partials/navbar.html" %}
+
+{% let edit_perm = self_user.role >= models::UserRole::Editor %}
+
+<table>
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Description</th>
+			<th>Category</th>
+			<th>Created Time</th>
+			<th>Created By</th>
+			{% if edit_perm -%}
+				<th></th>
+				<th></th>
+			{%- endif %}
+		</tr>
+	</thead>
+	<tbody>
+		{% for tag in tags %}
+		<tr>
+			<td>{{tag.name}}</td>
+			<td>{{tag.description.as_deref().unwrap_or("(none)")}}</td>
+			<td>{{tag.category.as_deref().unwrap_or("(none)")}}</td>
+			<td>{{tag.created_time}}</td>
+			<td>{{tag.created_by.as_deref().unwrap_or("(deleted)")}}</td>
+			{% if edit_perm -%}
+				<td><a href="/tags/{{tag.id}}">Edit</a></td>
+				{# don't forget the page when deleting a tag #}
+				<td><form method="post" action="/tags/{{tag.id}}/delete{{pagination.href()}}"><input type="submit" value="Delete"></form></td>
+			{%- endif %}
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+{{pagination|safe}}
+
+<form method="post">
+	<h2>New</h2>
+	<label for="name">Name</label>
+	<input type="text" required name="name" id="name" />
+	<label for="description">Description</label>
+	<input type="text" name="description" id="description" />
+	<label for="category">Category</label>
+	<select id="category" name="category" required>
+		{{shared::display_category_options(None, tag_categories.as_slice())|safe}}
+	</select>
+	<input type="submit" value="Create" />
+</form>
+
+{% if self_user.role >= models::UserRole::Admin %}
+	{% include "partials/run_sql.html" %}
+{% endif %}
+
+{% endblock %}

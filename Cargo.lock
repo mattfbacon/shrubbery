@@ -1655,6 +1655,7 @@ dependencies = [
  "argon2",
  "askama",
  "askama_actix",
+ "askama_escape",
  "base64",
  "bincode",
  "bindable",
