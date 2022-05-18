@@ -39,7 +39,7 @@ pub async fn post_handler(
 	use ormx::Insert as _;
 	macro_rules! err {
 		($($tok:tt)+) => {
-			Ok(Either::Left(RegisterTemplate { error: Some(format!($($tok)*)), return_url }))
+			Ok(Either::Left(RegisterTemplate { error: Some(format!($($tok)+)), return_url }))
 		};
 	}
 

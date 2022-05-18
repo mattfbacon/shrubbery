@@ -9,10 +9,10 @@ pub async fn get_tag_categories_lean(
 		.await
 }
 
-pub fn display_category_options<'a>(
+pub fn display_category_options(
 	current: Option<models::TagCategoryId>,
-	categories: &'a [(models::TagCategoryId, String)],
-) -> impl std::fmt::Display + 'a {
+	categories: &[(models::TagCategoryId, String)],
+) -> impl std::fmt::Display + '_ {
 	struct Helper<'a> {
 		current: Option<models::TagCategoryId>,
 		categories: &'a [(models::TagCategoryId, String)],

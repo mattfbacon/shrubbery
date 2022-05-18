@@ -130,7 +130,7 @@ mod test {
 		let original = Token::new(0);
 		let encrypted_cookie = original.encrypt_to_cookie(&key, false).unwrap();
 		assert_eq!(encrypted_cookie.name(), "token");
-		let decrypted = Token::decrypt(&encrypted_cookie.value(), &key)
+		let decrypted = Token::decrypt(encrypted_cookie.value(), &key)
 			.unwrap()
 			.unwrap();
 		// timestamp is rounded to seconds, so don't compare

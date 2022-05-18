@@ -53,7 +53,7 @@ pub async fn post_handler(
 ) -> actix_web::Result<Either</* private */ impl Responder, HttpResponse>> {
 	macro_rules! err {
 		($($tok:tt)+) => {
-			Ok(Either::Left(LoginTemplate { error: Some(format!($($tok)*)), return_url }))
+			Ok(Either::Left(LoginTemplate { error: Some(format!($($tok)+)), return_url }))
 		};
 	}
 

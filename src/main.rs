@@ -1,5 +1,19 @@
 #![feature(type_alias_impl_trait)]
-#![deny(private_in_public, rust_2018_idioms)]
+#![deny(
+	absolute_paths_not_starting_with_crate,
+	future_incompatible,
+	keyword_idents,
+	macro_use_extern_crate,
+	meta_variable_misuse,
+	missing_abi,
+	missing_copy_implementations,
+	non_ascii_idents,
+	nonstandard_style,
+	noop_method_call,
+	pointer_structural_match,
+	private_in_public,
+	rust_2018_idioms
+)]
 
 use actix_web::{middleware as mid, web, App as ActixApp, HttpServer};
 use anyhow::Context as _;
