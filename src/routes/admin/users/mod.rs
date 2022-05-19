@@ -49,11 +49,11 @@ pub async fn get_handler(
 ) -> Result<impl Responder, Error> {
 	use ormx::Table as _;
 	let num_pages = std::cmp::max(
-		models::User::count(&**database).await? / pagination.page_size,
+		models::User::count(&**database).await? / pagination.page_size(),
 		1,
 	);
 
-	if pagination.page >= num_pages {
+	if pagination.page() >= num_pages {
 		return Err(Error::Page);
 	}
 

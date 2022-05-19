@@ -57,11 +57,11 @@ pub async fn get_handler(
 	let database = &**database;
 
 	let num_pages = std::cmp::max(
-		models::Tag::count(database).await? / pagination.page_size,
+		models::Tag::count(database).await? / pagination.page_size(),
 		1,
 	);
 
-	if pagination.page >= num_pages {
+	if pagination.page() >= num_pages {
 		return Err(Error::Page);
 	}
 

@@ -2,27 +2,37 @@ pub type PageNum = i64;
 
 #[derive(serde::Deserialize, Clone, Copy)]
 pub struct Query {
-	#[serde(default = "default_page")]
-	pub page: PageNum,
-	#[serde(default = "default_page_size")]
-	pub page_size: PageNum,
+	pub page: Option<PageNum>,
+	pub page_size: Option<PageNum>,
 }
 
-const fn default_page() -> PageNum {
+pub const fn default_page() -> PageNum {
 	0
 }
 
-const fn default_page_size() -> PageNum {
+pub const fn default_page_size() -> PageNum {
 	20
 }
 
 impl Query {
-	pub fn offset(&self) -> PageNum {
-		self.page * self.page_size
+	#[inline]
+	pub fn page(&self) -> PageNum {
+		self.page.unwrap_or(default_page())
 	}
 
+	#[inline]
+	pub fn page_size(&self) -> PageNum {
+		self.page_size.unwrap_or(default_page_size())
+	}
+
+	#[inline]
+	pub fn offset(&self) -> PageNum {
+		self.page() * self.page_size()
+	}
+
+	#[inline]
 	pub fn limit(&self) -> PageNum {
-		self.page_size
+		self.page_size()
 	}
 }
 
@@ -41,16 +51,20 @@ impl Template {
 		}
 	}
 
-	pub fn href(&self) -> String {
-		format!(
-			"?page={}&page_size={}",
-			self.inner.page, self.inner.page_size
-		)
+	pub fn href(&self) -> std::borrow::Cow<'static, str> {
+		match (self.inner.page, self.inner.page_size) {
+			(Some(page), Some(page_size)) => format!("?page={page}&page_size={page_size}"),
+			(Some(page), None) => format!("?page={page}"),
+			(None, Some(page_size)) => format!("?page_size={page_size}"),
+			(None, None) => return "".into(),
+		}
+		.into()
 	}
 
 	pub fn next_page(mut self) -> Option<Self> {
-		self.inner.page = self.inner.page.checked_add(1)?;
-		if self.inner.page < self.num_pages {
+		let new_page = self.inner.page().checked_add(1)?;
+		self.inner.page = Some(new_page);
+		if new_page < self.num_pages {
 			Some(self)
 		} else {
 			None
@@ -58,8 +72,9 @@ impl Template {
 	}
 
 	pub fn prev_page(mut self) -> Option<Self> {
-		self.inner.page = self.inner.page.checked_sub(1)?;
-		if self.inner.page >= 0 {
+		let new_page = self.inner.page().checked_sub(1)?;
+		self.inner.page = Some(new_page);
+		if new_page >= 0 {
 			Some(self)
 		} else {
 			None
