@@ -2,6 +2,7 @@
 	<span role="presentation">Shrubbery</span>
 	<div class="spacer" role="presentation"></div>
 	<a href="/">Home</a>
+	<a href="/tags">Tags</a>
 	{% if self_user.role >= crate::database::models::UserRole::Admin %}<a href="/admin">Admin Panel</a>{% endif %}
 	<a href="/logout">Log out</a>
 </nav>
