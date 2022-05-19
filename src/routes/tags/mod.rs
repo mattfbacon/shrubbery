@@ -65,7 +65,7 @@ pub async fn get_handler(
 		return Err(Error::Page);
 	}
 
-	let tags = sqlx::query_as!(Tag, r#"SELECT tags.id, tags.name, tags.description, tag_categories.name as category, tags.created_time, users.username as created_by FROM tags LEFT JOIN users ON tags.created_by = users.id LEFT JOIN tag_categories ON tags.category = tag_categories.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await?;
+	let tags = sqlx::query_as!(Tag, r#"SELECT tags.id, tags.name, tags.description, tag_categories.name as "category?", tags.created_time, users.username as "created_by?" FROM tags LEFT JOIN users ON tags.created_by = users.id LEFT JOIN tag_categories ON tags.category = tag_categories.id ORDER BY tags.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await?;
 
 	let tag_categories = shared::get_tag_categories_lean(database).await?;
 

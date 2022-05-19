@@ -61,7 +61,7 @@ pub async fn get_handler(
 		return Err(Error::Page);
 	}
 
-	let tag_categories = sqlx::query_as!(TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time, users.username as created_by FROM tag_categories LEFT JOIN users ON tag_categories.created_by = users.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(&**database).await?;
+	let tag_categories = sqlx::query_as!(TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time, users.username as "created_by?" FROM tag_categories LEFT JOIN users ON tag_categories.created_by = users.id ORDER BY tag_categories.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(&**database).await?;
 
 	Ok(Template {
 		self_user,
