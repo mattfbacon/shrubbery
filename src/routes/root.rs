@@ -1,6 +1,6 @@
 use crate::database::models::User;
 use crate::helpers::auth::Auth;
-use actix_web::Responder;
+use actix_web::{web, Responder};
 use askama::Template;
 
 #[derive(Template)]
@@ -9,11 +9,10 @@ struct WelcomeTemplate {
 	self_user: User,
 }
 
-#[actix_web::get("/")]
 pub async fn handler(Auth(self_user): Auth) -> impl Responder {
 	WelcomeTemplate { self_user }
 }
 
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(handler);
+	app.service(web::resource("/").route(web::get().to(handler)));
 }
