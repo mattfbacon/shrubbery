@@ -4,7 +4,7 @@ use actix_web::Responder;
 use askama::Template;
 
 #[derive(Template)]
-#[template(path = "home.html")]
+#[template(path = "index.html")]
 struct WelcomeTemplate {
 	self_user: User,
 }
