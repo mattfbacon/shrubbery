@@ -13,3 +13,7 @@ struct WelcomeTemplate {
 pub async fn handler(Auth(self_user): Auth) -> impl Responder {
 	WelcomeTemplate { self_user }
 }
+
+pub fn configure(app: &mut actix_web::web::ServiceConfig) {
+	app.service(handler);
+}

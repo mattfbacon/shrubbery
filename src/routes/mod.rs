@@ -7,7 +7,7 @@ mod root;
 mod tags;
 
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(root::handler);
+	root::configure(app);
 	admin::configure(app);
 	login::configure(app);
 	logout::configure(app);
