@@ -1,10 +1,10 @@
 <!-- prettier-ignore -->
-{% extends "layouts/default.html" %}
+{% extends "_layouts/default.html" %}
 
 {% block title %}Home{%endblock %}
 
 {% block content %}
-{% include "partials/navbar.html" %}
+{% include "_partials/navbar.html" %}
 
 {% if search_results.is_none() -%}
 	<h1>Hello, {{self_user.username}} ({{self_user.role}})</h1>

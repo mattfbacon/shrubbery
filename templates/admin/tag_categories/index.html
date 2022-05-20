@@ -1,10 +1,10 @@
 <!-- prettier-ignore -->
-{% extends "layouts/default.html" %}
+{% extends "_layouts/default.html" %}
 
 {% block title %}Manage Tag Categories{% endblock %}
 
 {% block content %}
-{% include "partials/navbar.html" %}
+{% include "_partials/navbar.html" %}
 
 <table>
 	<thead>
@@ -59,6 +59,6 @@
 	<input type="submit" value="Create" />
 </form>
 
-{% include "partials/run_sql.html" %}
+{% include "_partials/run_sql.html" %}
 
 {% endblock %}

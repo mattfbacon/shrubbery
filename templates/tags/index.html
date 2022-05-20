@@ -1,5 +1,5 @@
 <!-- prettier-ignore -->
-{% extends "layouts/default.html" %}
+{% extends "_layouts/default.html" %}
 
 {% block title -%}
 	{% let edit_perm = self_user.role >= models::UserRole::Editor %}
@@ -11,7 +11,7 @@
 {%- endblock %}
 
 {% block content %}
-{% include "partials/navbar.html" %}
+{% include "_partials/navbar.html" %}
 
 {% let edit_perm = self_user.role >= models::UserRole::Editor %}
 
@@ -63,7 +63,7 @@
 </form>
 
 {% if self_user.role >= models::UserRole::Admin %}
-	{% include "partials/run_sql.html" %}
+	{% include "_partials/run_sql.html" %}
 {% endif %}
 
 {% endblock %}
