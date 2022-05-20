@@ -19,10 +19,12 @@ bincode = "1"
 chrono = { version = "0.4", features = ["serde"] }
 figment = { version = "0.10", features = ["env", "toml"] }
 log = "0.4"
+nom = "7"
 percent-encoding = "2"
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }
 simple_logger = "2"
+smartstring = "1"
 thiserror = "1"
 
 [dependencies.sqlx]

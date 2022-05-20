@@ -26,6 +26,7 @@ mod percent;
 mod routes;
 mod timestamp;
 mod token;
+mod viewspec;
 
 use config::BindableAddr;
 
