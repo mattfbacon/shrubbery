@@ -16,9 +16,10 @@ pub async fn handler(Admin(self_user): Admin) -> impl Responder {
 	Template { self_user }
 }
 
+use super::sub;
+
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(web::resource("/admin").route(web::get().to(handler)));
-	sql::configure(app);
-	tag_categories::configure(app);
-	users::configure(app);
+	app.service(web::resource("").route(web::get().to(handler)));
+
+	sub!(app; sql, tag_categories, users);
 }

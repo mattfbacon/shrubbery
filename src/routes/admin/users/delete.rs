@@ -19,5 +19,5 @@ pub async fn post_handler(
 }
 
 pub fn configure(app: &mut web::ServiceConfig) {
-	app.service(web::resource("/admin/users/{user_id}/delete").route(web::post().to(post_handler)));
+	app.service(web::resource("/delete").route(web::post().to(post_handler)));
 }

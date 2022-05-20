@@ -73,7 +73,7 @@ pub async fn post_handler(
 
 pub fn configure(app: &mut web::ServiceConfig) {
 	app.service(
-		web::resource("/admin/users/{user_id}")
+		web::resource("")
 			.route(web::get().to(get_handler))
 			.route(web::post().to(post_handler)),
 	);

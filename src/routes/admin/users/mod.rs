@@ -68,7 +68,10 @@ pub async fn get_handler(
 }
 
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(web::resource("/admin/users").route(web::get().to(get_handler)));
-	delete::configure(app);
-	edit::configure(app);
+	app.service(web::resource("").route(web::get().to(get_handler)));
+	app.service(
+		web::scope("/{user_id:\\d+}")
+			.configure(delete::configure)
+			.configure(edit::configure),
+	);
 }

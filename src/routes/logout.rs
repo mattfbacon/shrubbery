@@ -10,5 +10,5 @@ pub async fn handler() -> HttpResponse {
 }
 
 pub fn configure(app: &mut web::ServiceConfig) {
-	app.service(web::resource("/logout").route(web::get().to(handler)));
+	app.service(web::resource("").route(web::get().to(handler)));
 }

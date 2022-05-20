@@ -110,10 +110,13 @@ pub async fn post_handler(
 
 pub fn configure(app: &mut actix_web::web::ServiceConfig) {
 	app.service(
-		web::resource("/tags")
+		web::resource("")
 			.route(web::get().to(get_handler))
 			.route(web::post().to(post_handler)),
 	);
-	delete::configure(app);
-	edit::configure(app);
+	app.service(
+		web::scope("/{tag_id:\\d+}")
+			.configure(delete::configure)
+			.configure(edit::configure),
+	);
 }

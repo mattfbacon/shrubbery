@@ -37,7 +37,7 @@ impl Query {
 }
 
 #[derive(askama::Template, Clone, Copy)]
-#[template(path = "partials/pagination.html")]
+#[template(path = "_partials/pagination.html")]
 pub struct Template {
 	pub inner: Query,
 	pub num_pages: PageNum,
