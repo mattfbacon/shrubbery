@@ -19,24 +19,24 @@
 		</tr>
 	</thead>
 	<tbody>
-		{% for user in users %}
-		<tr>
-			<td>{{user.username}}</td>
-			<td>{{user.email.as_deref().unwrap_or("(none)")}}</td>
-			<td>{{user.role.to_string()|capitalize}}</td>
-			<td>{{user.created_time}}</td>
-			<td>
-				{%- if let Some(last_login) = user.last_login -%}
-					{{last_login}}
-				{%- else -%}
-					Never
-				{%- endif -%}
-			</td>
-			<td><a href="/admin/users/{{user.id}}">Edit</a></td>
-			{# don't forget the page when deleting a user #}
-			<td><form method="post" action="/admin/users/{{user.id}}/delete{{pagination.href()}}"><input type="submit" value="Delete"></form></td>
-		</tr>
-		{% endfor %}
+		{% for user in users -%}
+			<tr>
+				<td>{{user.username}}</td>
+				<td>{{user.email.as_deref().unwrap_or("(none)")}}</td>
+				<td>{{user.role.to_string()|capitalize}}</td>
+				<td>{{user.created_time}}</td>
+				<td>
+					{%- if let Some(last_login) = user.last_login -%}
+						{{last_login}}
+					{%- else -%}
+						Never
+					{%- endif -%}
+				</td>
+				<td><a href="/admin/users/{{user.id}}">Edit</a></td>
+				{# don't forget the page when deleting a user #}
+				<td><form method="post" action="/admin/users/{{user.id}}/delete{{pagination.href()}}"><input type="submit" value="Delete"></form></td>
+			</tr>
+		{%- endfor %}
 	</tbody>
 </table>
 

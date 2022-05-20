@@ -19,30 +19,30 @@
 		</tr>
 	</thead>
 	<tbody>
-		{% for tag_cat in tag_categories %}
-		<tr>
-			<td>{{tag_cat.name}}</td>
-			<td style="max-width: 10em; overflow: hidden; text-overflow: ellipsis">
-				{%- if let Some(description) = tag_cat.description -%}
-					{{description}}
-				{%- else -%}
-					(none)
-				{%- endif -%}
-			</td>
-			<td style="text-decoration: underline {{tag_cat.color.to_hex()}}">{{tag_cat.color.to_hex()}}</td>
-			<td>{{tag_cat.created_time}}</td>
-			<td>
-				{%- if let Some(created_by) = tag_cat.created_by -%}
-					{{created_by}}
-				{%- else -%}
-					(deleted)
-				{%- endif -%}
-			</td>
-			<td><a href="/admin/tag_categories/{{tag_cat.id}}">Edit</a></td>
-			{# don't forget the page when deleting a tag category #}
-			<td><form method="post" action="/admin/tag_categories/{{tag_cat.id}}/delete{{pagination.href()}}"><input type="submit" value="Delete"></form></td>
-		</tr>
-		{% endfor %}
+		{% for tag_cat in tag_categories -%}
+			<tr>
+				<td>{{tag_cat.name}}</td>
+				<td style="max-width: 10em; overflow: hidden; text-overflow: ellipsis">
+					{%- if let Some(description) = tag_cat.description -%}
+						{{description}}
+					{%- else -%}
+						(none)
+					{%- endif -%}
+				</td>
+				<td style="text-decoration: underline {{tag_cat.color.to_hex()}}">{{tag_cat.color.to_hex()}}</td>
+				<td>{{tag_cat.created_time}}</td>
+				<td>
+					{%- if let Some(created_by) = tag_cat.created_by -%}
+						{{created_by}}
+					{%- else -%}
+						(deleted)
+					{%- endif -%}
+				</td>
+				<td><a href="/admin/tag_categories/{{tag_cat.id}}">Edit</a></td>
+				{# don't forget the page when deleting a tag category #}
+				<td><form method="post" action="/admin/tag_categories/{{tag_cat.id}}/delete{{pagination.href()}}"><input type="submit" value="Delete"></form></td>
+			</tr>
+		{%- endfor %}
 	</tbody>
 </table>
 

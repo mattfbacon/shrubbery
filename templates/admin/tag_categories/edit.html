@@ -6,9 +6,9 @@
 {% block content %}
 {% include "_partials/navbar.html" %}
 
-{% if updated %}
-<p>Updated the tag category</p>
-{% endif %}
+{% if updated -%}
+	<p>Updated the tag category</p>
+{%- endif %}
 
 <h1>Edit Tag Category</h1>
 <form method="post">

@@ -28,7 +28,7 @@
 	{% if i64::try_from(search_results.len()).unwrap_or(i64::MAX) >= page_size -%}
 		{%- if let Some((last_id, _)) = search_results.last() -%}
 			<form method="get">
-				<input type="hidden" name="after" value="{{last_id}}">
+				<input type="hidden" name="after" value="{{last_id}}" />
 				<input type="hidden" name="page_size" value="{{page_size}}" />
 				<input type="submit" value="Next Page" />
 			</form>
