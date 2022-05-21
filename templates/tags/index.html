@@ -64,8 +64,8 @@
 	</form>
 {%- endif %}
 
-{% if self_user.role >= models::UserRole::Admin %}
+{% if self_user.role >= models::UserRole::Admin -%}
 	{% include "_partials/run_sql.html" %}
-{% endif %}
+{%- endif %}
 
 {% endblock %}
