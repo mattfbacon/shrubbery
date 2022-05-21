@@ -10,10 +10,13 @@ CREATE TABLE users (
 	last_login TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 
+CREATE TYPE file_media_type AS ENUM ('image', 'video');
+
 CREATE TABLE files (
 	id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, -- file is named by this ID
 	name VARCHAR NOT NULL,
-	description VARCHAR
+	description VARCHAR,
+	media_type file_media_type NOT NULL
 	-- timestamp data stored in filesystem
 );
 

@@ -11,6 +11,7 @@ DROP FUNCTION require_created_by;
 DROP DOMAIN color;
 
 DROP TABLE files;
+DROP TYPE file_media_type;
 
 DROP TABLE users;
 DROP TYPE user_role;
