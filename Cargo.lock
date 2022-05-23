@@ -1661,6 +1661,7 @@ dependencies = [
  "bindable",
  "chrono",
  "figment",
+ "futures",
  "log",
  "nom",
  "ormx",
@@ -1671,6 +1672,7 @@ dependencies = [
  "smartstring",
  "sqlx",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]

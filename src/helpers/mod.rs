@@ -2,6 +2,7 @@ use actix_web::cookie::Cookie;
 use actix_web::http::StatusCode as HttpStatus;
 
 pub mod auth;
+pub mod just_file;
 pub mod or_null;
 pub mod pagination;
 
