@@ -1,19 +1,13 @@
+use super::media_type::MediaType;
 use super::BigId;
 use ormx::Table;
 
 pub type FileId = BigId;
 
-#[derive(sqlx::Type, Debug, PartialEq, Eq, Clone, Copy)]
-#[sqlx(type_name = "file_media_type")]
-#[sqlx(rename_all = "snake_case")]
-pub enum MediaType {
-	Image,
-	Video,
-}
-
 #[derive(Table)]
 #[ormx(table = "files", insertable, deletable)]
 pub struct File {
+	#[ormx(get_optional = by_id(FileId))]
 	pub id: FileId,
 	pub name: String,
 	pub description: Option<String>,

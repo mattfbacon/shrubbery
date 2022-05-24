@@ -1,8 +1,10 @@
 pub mod color;
+pub mod media_type;
 pub mod user_crypt;
 pub mod user_role;
 
 pub use color::Color;
+pub use media_type::MediaType;
 pub use user_crypt::PasswordHash as UserPassword;
 pub use user_role::UserRole;
 
