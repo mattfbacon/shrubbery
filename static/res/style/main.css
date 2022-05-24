@@ -14,10 +14,10 @@ footer#license-notice {
 	border-top: 1px solid gray;
 }
 
-form > label ~ input:not([type="checkbox"]),
-form > label ~ select,
-form > label ~ textarea,
-form > label ~ div.input-group {
+form > label + input:not([type="checkbox"]),
+form > label + select,
+form > label + textarea,
+form > label + div.input-group {
 	display: block;
 	margin-bottom: var(--space-medium);
 }
