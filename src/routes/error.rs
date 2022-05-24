@@ -42,7 +42,7 @@ pub async fn default_handler(req: ServiceRequest) -> Result<ServiceResponse, act
 	.unwrap();
 	Ok(ServiceResponse::new(
 		req,
-		HttpResponse::Ok()
+		HttpResponse::NotFound()
 			.insert_header(("Content-Type", Template::MIME_TYPE))
 			.body(res),
 	))

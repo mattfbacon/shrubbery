@@ -53,6 +53,7 @@ async fn main_() -> anyhow::Result<()> {
 				.app_data(web::Data::from(Arc::clone(&database)))
 				.wrap(mid::Logger::default())
 				.configure(routes::configure)
+				.default_service(routes::error::default_handler)
 				.wrap(mid::NormalizePath::trim())
 		})
 	};
