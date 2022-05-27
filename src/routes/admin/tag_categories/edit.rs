@@ -1,41 +1,47 @@
-use crate::database::{models, Database};
-use crate::helpers::{auth, set_none_if_empty};
-use actix_web::{web, Responder};
+use std::sync::Arc;
 
-use super::Error;
+use axum::response::{ErrorResponse, IntoResponse};
+use axum::{extract, Router};
+
+use crate::database::{models, Database};
+use crate::error;
+use crate::helpers::{auth, set_none_if_empty};
 
 #[derive(askama::Template)]
 #[template(path = "admin/tag_categories/edit.html")]
 struct Template {
 	updated: bool,
 	self_user: models::User,
-	requested_tag_category: models::TagCategory,
-	created_by_username: Option<String>,
+	requested_tag_category: super::TagCategoryWithUserResolved,
+}
+crate::helpers::impl_into_response!(Template);
+
+impl super::TagCategoryWithUserResolved {
+	async fn get_by_id(
+		database: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+		id: models::TagCategoryId,
+	) -> sqlx::Result<Option<Self>> {
+		sqlx::query_as!(super::TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time, (SELECT name FROM users WHERE id = tag_categories.created_by) as created_by FROM tag_categories WHERE id = $1"#, id).fetch_optional(database).await
+	}
 }
 
 pub async fn get_handler(
 	auth::Admin(self_user): auth::Admin,
-	path: web::Path<(models::TagCategoryId,)>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
-	let (tag_category_id,) = path.into_inner();
+	extract::Path((tag_category_id,)): extract::Path<(models::TagCategoryId,)>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
+	let database = &*database;
 
-	let requested_tag_category = models::TagCategory::by_id(&**database, tag_category_id)
-		.await?
-		.ok_or(Error::NotFound)?;
-
-	let created_by_username = if let Some(created_by_id) = requested_tag_category.created_by {
-		models::User::by_id(&**database, created_by_id).await?
-	} else {
-		None
-	}
-	.map(|user| user.username);
+	let requested_tag_category =
+		super::TagCategoryWithUserResolved::get_by_id(database, tag_category_id)
+			.await
+			.map_err(error::Sqlx)?
+			.ok_or(error::EntityNotFound("tag category"))?;
 
 	Ok(Template {
 		updated: false,
 		self_user,
 		requested_tag_category,
-		created_by_username,
 	})
 }
 
@@ -48,47 +54,41 @@ pub struct EditRequest {
 
 pub async fn post_handler(
 	auth::Admin(self_user): auth::Admin,
-	path: web::Path<(models::UserId,)>,
-	web::Form(mut request): web::Form<EditRequest>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
-	let database = &**database;
+	extract::Path((tag_category_id,)): extract::Path<(models::TagCategoryId,)>,
+	extract::Form(mut request): extract::Form<EditRequest>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
+	let database = &*database;
 
 	set_none_if_empty(&mut request.description);
 
-	let (tag_category_id,) = path.into_inner();
-	let mut requested_tag_category = models::TagCategory::by_id(database, tag_category_id)
-		.await?
-		.ok_or(Error::NotFound)?;
-	requested_tag_category
-		.set_name(database, request.name)
-		.await?;
-	requested_tag_category
-		.set_description(database, request.description)
-		.await?;
-	requested_tag_category
-		.set_color(database, request.color)
-		.await?;
-
-	let created_by_username = if let Some(created_by_id) = requested_tag_category.created_by {
-		models::User::by_id(database, created_by_id).await?
-	} else {
-		None
+	let query_result = sqlx::query!(
+		"UPDATE tag_categories SET name = $2, description = $3, color = $4 WHERE id = $1",
+		tag_category_id,
+		request.name,
+		request.description,
+		request.color as _
+	)
+	.execute(database)
+	.await
+	.map_err(error::Sqlx)?;
+	if query_result.rows_affected() == 0 {
+		return Err(error::EntityNotFound("tag category").into());
 	}
-	.map(|user| user.username);
+
+	let requested_tag_category =
+		super::TagCategoryWithUserResolved::get_by_id(database, tag_category_id)
+			.await
+			.map_err(error::Sqlx)?
+			.ok_or(error::EntityNotFound("tag category"))?;
 
 	Ok(Template {
 		updated: true,
 		self_user,
 		requested_tag_category,
-		created_by_username,
 	})
 }
 
-pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(
-		web::resource("")
-			.route(web::get().to(get_handler))
-			.route(web::post().to(post_handler)),
-	);
+pub fn configure() -> Router {
+	Router::new().route("/", axum::routing::get(get_handler).post(post_handler))
 }

@@ -1,14 +1,15 @@
-use crate::helpers::remove_cookie;
-use actix_web::http::StatusCode as HttpStatus;
-use actix_web::{web, HttpResponse};
+use axum::response::{IntoResponse, Redirect};
+use axum::Router;
 
-pub async fn handler() -> HttpResponse {
-	HttpResponse::build(HttpStatus::SEE_OTHER)
-		.insert_header(("Location", "/login"))
-		.cookie(remove_cookie("token"))
-		.finish()
+use crate::helpers::cookie::CookiePart;
+
+pub async fn handler() -> impl IntoResponse {
+	(
+		CookiePart(crate::token::remove_cookie()),
+		Redirect::to("/to"),
+	)
 }
 
-pub fn configure(app: &mut web::ServiceConfig) {
-	app.service(web::resource("").route(web::get().to(handler)));
+pub fn configure() -> Router {
+	Router::new().route("/", axum::routing::get(handler))
 }

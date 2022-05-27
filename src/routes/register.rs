@@ -1,23 +1,28 @@
-use crate::database::{models, Database};
-use crate::helpers::{internal_server_error, set_none_if_empty};
-use crate::percent::PercentEncodedString;
-use actix_web::http::StatusCode as HttpStatus;
-use actix_web::{web, Either, HttpResponse, Responder};
+use std::sync::Arc;
+
+use axum::response::{ErrorResponse, Redirect, Response};
+use axum::Router;
+use axum::{extract, response::IntoResponse};
 use serde::Deserialize;
 
 use super::login::ReturnUrl;
+use crate::database::{models, Database};
+use crate::error;
+use crate::helpers::set_none_if_empty;
+use crate::percent::PercentEncodedString;
 
 #[derive(askama::Template)]
 #[template(path = "register.html")]
-struct RegisterTemplate {
+struct Template {
 	error: Option<String>,
 	return_url: Option<PercentEncodedString>,
 }
+crate::helpers::impl_into_response!(Template);
 
 pub async fn get_handler(
-	web::Query(ReturnUrl { return_url }): web::Query<ReturnUrl>,
-) -> impl Responder {
-	RegisterTemplate {
+	extract::Query(ReturnUrl { return_url }): extract::Query<ReturnUrl>,
+) -> impl IntoResponse {
+	Template {
 		error: None,
 		return_url,
 	}
@@ -32,14 +37,14 @@ pub struct RegisterRequest {
 }
 
 pub async fn post_handler(
-	web::Form(mut request): web::Form<RegisterRequest>,
-	web::Query(ReturnUrl { return_url }): web::Query<ReturnUrl>,
-	database: web::Data<Database>,
-) -> actix_web::Result<Either</* private */ impl Responder, HttpResponse>> {
+	extract::Form(mut request): extract::Form<RegisterRequest>,
+	extract::Query(ReturnUrl { return_url }): extract::Query<ReturnUrl>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<Response, ErrorResponse> {
 	use ormx::Insert as _;
 	macro_rules! err {
 		($($tok:tt)+) => {
-			Ok(Either::Left(RegisterTemplate { error: Some(format!($($tok)+)), return_url }))
+			Ok(Template { error: Some(format!($($tok)+)), return_url }.into_response())
 		};
 	}
 
@@ -48,9 +53,9 @@ pub async fn post_handler(
 		return err!("Passwords do not match");
 	}
 
-	if models::User::by_username(&**database, &request.username)
+	if models::User::by_username(&*database, &request.username)
 		.await
-		.map_err(internal_server_error)?
+		.map_err(error::Sqlx)?
 		.is_some()
 	{
 		return err!("Username taken");
@@ -58,27 +63,21 @@ pub async fn post_handler(
 
 	models::user::Create {
 		username: request.username,
-		password: models::UserPassword::hash(&request.password).map_err(internal_server_error)?,
+		password: models::UserPassword::hash(&request.password).map_err(|_| error::PasswordHash)?,
 		email: request.email,
 	}
-	.insert(&**database)
+	.insert(&*database)
 	.await
-	.map_err(internal_server_error)?;
+	.map_err(error::Sqlx)?;
 
-	let redirect_url = match return_url {
-		Some(return_url) => format!("/login?return={}", return_url),
-		None => "/login".to_owned(),
+	// construct `Redirect` inside `match` due to `String` vs `str`
+	let redirect = match return_url {
+		Some(return_url) => Redirect::to(&format!("/login?return={}", return_url)),
+		None => Redirect::to("/login"),
 	};
-	let response = HttpResponse::build(HttpStatus::SEE_OTHER)
-		.insert_header(("Location", redirect_url))
-		.finish();
-	Ok(Either::Right(response))
+	Ok(redirect.into_response())
 }
 
-pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(
-		web::resource("")
-			.route(web::get().to(get_handler))
-			.route(web::post().to(post_handler)),
-	);
+pub fn configure() -> Router {
+	Router::new().route("/", axum::routing::get(get_handler).post(post_handler))
 }

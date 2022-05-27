@@ -1,6 +1,7 @@
+use smartstring::alias::String as SmartString;
+
 use super::{Tag, ViewSpec};
 use crate::database::models;
-use smartstring::alias::String as SmartString;
 
 struct Bindings<'a> {
 	bindings: Vec<&'a SmartString>,

@@ -1,8 +1,11 @@
-use crate::database::{models, Database};
-use crate::helpers::{auth, set_none_if_empty, OrNull};
-use actix_web::{web, Responder};
+use std::sync::Arc;
 
-use super::Error;
+use axum::response::{ErrorResponse, IntoResponse};
+use axum::{extract, Router};
+
+use crate::database::{models, Database};
+use crate::error;
+use crate::helpers::{auth, set_none_if_empty, OrNull};
 
 pub struct Tag {
 	pub id: models::TagId,
@@ -27,18 +30,23 @@ struct Template {
 	requested_tag: Tag,
 	tag_categories: Vec<(models::TagCategoryId, String)>,
 }
+crate::helpers::impl_into_response!(Template);
 
 pub async fn get_handler(
 	auth::Admin(self_user): auth::Admin,
-	path: web::Path<(models::TagId,)>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
-	let database = &**database;
-	let (tag_id,) = path.into_inner();
+	extract::Path((tag_id,)): extract::Path<(models::TagId,)>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
+	let database = &*database;
 
-	let requested_tag = Tag::by_id(database, tag_id).await?.ok_or(Error::NotFound)?;
+	let requested_tag = Tag::by_id(database, tag_id)
+		.await
+		.map_err(error::Sqlx)?
+		.ok_or(error::EntityNotFound("tag"))?;
 
-	let tag_categories = super::shared::get_tag_categories_lean(database).await?;
+	let tag_categories = super::shared::get_tag_categories_lean(database)
+		.await
+		.map_err(error::Sqlx)?;
 
 	Ok(Template {
 		updated: false,
@@ -57,15 +65,13 @@ pub struct EditRequest {
 
 pub async fn post_handler(
 	auth::Editor(self_user): auth::Editor,
-	path: web::Path<(models::TagId,)>,
-	web::Form(mut request): web::Form<EditRequest>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
-	let database = &**database;
+	extract::Path((tag_id,)): extract::Path<(models::TagId,)>,
+	extract::Form(mut request): extract::Form<EditRequest>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
+	let database = &*database;
 
 	set_none_if_empty(&mut request.description);
-
-	let (tag_id,) = path.into_inner();
 
 	sqlx::query!(
 		"UPDATE tags SET name = $2, description = $3, category = $4 WHERE id = $1",
@@ -75,11 +81,17 @@ pub async fn post_handler(
 		request.category.into_option()
 	)
 	.execute(database)
-	.await?;
+	.await
+	.map_err(error::Sqlx)?;
 
-	let requested_tag = Tag::by_id(database, tag_id).await?.ok_or(Error::NotFound)?;
+	let requested_tag = Tag::by_id(database, tag_id)
+		.await
+		.map_err(error::Sqlx)?
+		.ok_or(error::EntityNotFound("tag"))?;
 
-	let tag_categories = super::shared::get_tag_categories_lean(database).await?;
+	let tag_categories = super::shared::get_tag_categories_lean(database)
+		.await
+		.map_err(error::Sqlx)?;
 
 	Ok(Template {
 		updated: true,
@@ -89,10 +101,6 @@ pub async fn post_handler(
 	})
 }
 
-pub fn configure(app: &mut web::ServiceConfig) {
-	app.service(
-		web::resource("")
-			.route(web::get().to(get_handler))
-			.route(web::post().to(post_handler)),
-	);
+pub fn configure() -> Router {
+	Router::new().route("/", axum::routing::get(get_handler).post(post_handler))
 }

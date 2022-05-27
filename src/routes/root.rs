@@ -1,8 +1,12 @@
+use std::sync::Arc;
+
+use axum::response::{ErrorResponse, IntoResponse};
+use axum::{extract, Router};
+
 use crate::database::{models, Database};
+use crate::error;
 use crate::helpers::auth;
 use crate::viewspec::ViewSpec;
-use actix_web::http::StatusCode as HttpStatus;
-use actix_web::{web, Responder};
 
 #[derive(askama::Template)]
 #[template(path = "index.html")]
@@ -11,6 +15,7 @@ struct Template {
 	search_results: Option<Vec<(models::FileId, String)>>,
 	page_size: i64,
 }
+crate::helpers::impl_into_response!(Template);
 
 #[derive(serde::Deserialize)]
 pub struct Query {
@@ -20,35 +25,22 @@ pub struct Query {
 	page_size: i64,
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-	#[error("{0}")]
-	Sqlx(#[from] sqlx::Error),
-}
-
-impl actix_web::ResponseError for Error {
-	fn status_code(&self) -> HttpStatus {
-		match self {
-			Self::Sqlx(..) => HttpStatus::INTERNAL_SERVER_ERROR,
-		}
-	}
-
-	fn error_response(&self) -> actix_web::HttpResponse {
-		crate::routes::error::error_response(self)
-	}
-}
-
 pub async fn get_handler(
 	auth::Auth(self_user): auth::Auth,
-	web::Query(Query {
+	extract::Query(Query {
 		viewspec,
 		after,
 		page_size,
-	}): web::Query<Query>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
+	}): extract::Query<Query>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
 	let search_results = match viewspec {
-		Some(viewspec) => Some(viewspec.evaluate(&**database, after, page_size).await?),
+		Some(viewspec) => Some(
+			viewspec
+				.evaluate(&*database, after, page_size)
+				.await
+				.map_err(error::Sqlx)?,
+		),
 		None => None,
 	};
 	Ok(Template {
@@ -58,6 +50,6 @@ pub async fn get_handler(
 	})
 }
 
-pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(web::resource("/").route(web::get().to(get_handler)));
+pub fn configure() -> Router {
+	Router::new().route("/", axum::routing::get(get_handler))
 }

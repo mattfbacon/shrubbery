@@ -1,7 +1,9 @@
+use chrono::Duration;
+use cookie::Cookie;
+use serde::{Deserialize, Serialize};
+
 use crate::database::models::UserId;
 use crate::timestamp::{self, Timestamp};
-use chrono::Duration;
-use serde::{Deserialize, Serialize};
 
 pub mod crypt;
 pub use crypt::Key;
@@ -25,4 +27,10 @@ impl Token {
 	pub fn is_expired(&self) -> bool {
 		timestamp::is_in_past(&self.expires_at)
 	}
+}
+
+pub fn remove_cookie() -> Cookie<'static> {
+	let mut cookie = Cookie::named("token");
+	cookie.make_removal();
+	cookie
 }

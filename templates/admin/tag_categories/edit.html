@@ -26,7 +26,7 @@
 		<input type="time" disabled value="{{requested_tag_category.created_time.time().format("%T")}}" />
 	</div>
 	<label for="created_by">Created By</label>
-	<input type="text" id="created_by" disabled value="{{created_by_username.as_deref().unwrap_or("(deleted)")}}">
+	<input type="text" id="created_by" disabled value="{{requested_tag_category.created_by.as_deref().unwrap_or("(deleted)")}}">
 	<div class="input-group">
 		<input type="submit" value="Edit" />
 		<input type="reset" value="Reset" />

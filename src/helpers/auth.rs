@@ -1,33 +1,40 @@
-use crate::database::models::{self, User};
-use crate::helpers::remove_cookie;
-use actix_web::dev::Payload;
-use actix_web::http::StatusCode as HttpStatus;
-use actix_web::web::Data as WebData;
-use actix_web::{FromRequest, HttpRequest, HttpResponse};
-use std::future::Future;
 use std::sync::Arc;
+
+use axum::async_trait;
+use axum::body::Body;
+use axum::extract::{FromRequest, RequestParts};
+use axum::response::{IntoResponse, Response};
+use headers::HeaderMapExt as _;
+use http::StatusCode;
+
+use crate::database::models::{self, User};
 
 pub struct Auth(pub User);
 
 struct Params {
 	uri: String,
-	token: Option<actix_web::cookie::Cookie<'static>>,
+	token: Option<String>,
 	database: Arc<crate::database::Database>,
 	config: Arc<crate::config::Config>,
 }
 
 impl Auth {
-	fn get_params(req: &HttpRequest) -> Params {
+	fn get_params(req: &RequestParts<Body>) -> Params {
 		let uri = req.uri().to_string();
-		let token = req.cookie("token");
+		let token = req
+			.headers()
+			.typed_get::<headers::Cookie>()
+			.and_then(|cookies| cookies.get("token").map(|token| token.to_owned()));
 		let database = Arc::clone(
 			req
-				.app_data::<WebData<crate::database::Database>>()
+				.extensions()
+				.get::<Arc<crate::database::Database>>()
 				.expect("Could not get database from app data"),
 		);
 		let config = Arc::clone(
 			req
-				.app_data::<WebData<crate::config::Config>>()
+				.extensions()
+				.get::<Arc<crate::config::Config>>()
 				.expect("Could not get config from app data"),
 		);
 		Params {
@@ -49,7 +56,7 @@ impl Auth {
 			Some(token) => token,
 			None => return Err(AuthError::NoToken { redirect_to: uri }),
 		};
-		let token = crate::token::Token::decrypt(token.value(), &config.cookie_signing_key)
+		let token = crate::token::Token::decrypt(&token, &config.cookie_signing_key)
 			.map_err(|_| AuthError::Invalid)?;
 		let token = match token {
 			Some(token) => token,
@@ -102,46 +109,58 @@ impl AuthError {
 			Forbidden | Sqlx(_) => false,
 		}
 	}
-}
 
-impl actix_web::ResponseError for AuthError {
-	fn status_code(&self) -> HttpStatus {
+	fn status_code(&self) -> StatusCode {
 		use AuthError::*;
 		match self {
 			// redirect to /login, which will redirect back to the current page after the user logs in
-			NoToken { .. } | Expired { .. } | UserDeleted { .. } => HttpStatus::SEE_OTHER,
-			Invalid => HttpStatus::BAD_REQUEST,
-			Forbidden => HttpStatus::FORBIDDEN,
-			Sqlx(_) => HttpStatus::INTERNAL_SERVER_ERROR,
+			NoToken { .. } | Expired { .. } | UserDeleted { .. } => StatusCode::SEE_OTHER,
+			Invalid => StatusCode::BAD_REQUEST,
+			Forbidden => StatusCode::FORBIDDEN,
+			Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
 		}
 	}
+}
 
-	fn error_response(&self) -> HttpResponse {
-		let mut builder = HttpResponse::build(self.status_code());
+impl IntoResponse for AuthError {
+	fn into_response(self) -> Response {
+		let mut builder = Response::builder().status(self.status_code());
+
 		if self.should_remove_token() {
-			builder.cookie(remove_cookie("token"));
+			builder.headers_mut().unwrap().insert(
+				"Set-Cookie",
+				crate::token::remove_cookie()
+					.encoded()
+					.to_string()
+					.parse()
+					.unwrap(),
+			);
 		}
+
 		if let Some(redirect_to) = self.redirect_to() {
 			debug_assert!(self.status_code().is_redirection());
-			builder.insert_header((
+			builder = builder.header(
 				"Location",
 				format!(
 					"/login?return={}",
 					crate::percent::percent_encode(redirect_to.as_bytes())
 				),
-			));
+			);
 		}
-		builder.body(self.to_string())
+
+		builder
+			.body(axum::body::boxed(http_body::Full::from(self.to_string())))
+			.unwrap()
 	}
 }
 
-impl FromRequest for Auth {
-	type Error = AuthError;
-	type Future = impl Future<Output = Result<Self, Self::Error>>;
+#[async_trait]
+impl FromRequest<Body> for Auth {
+	type Rejection = AuthError;
 
-	fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+	async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
 		let params = Self::get_params(req);
-		Self::extract(params)
+		Self::extract(params).await
 	}
 }
 
@@ -152,19 +171,17 @@ macro_rules! role_extractor {
 	($extractor_name:ident, $min_role:ident) => {
 		pub struct $extractor_name(pub User);
 
-		impl FromRequest for $extractor_name {
-			type Error = <Auth as FromRequest>::Error;
-			type Future = impl Future<Output = Result<Self, Self::Error>>;
+		#[async_trait]
+		impl FromRequest<Body> for $extractor_name {
+			type Rejection = AuthError;
 
-			fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+			async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
 				let params = Auth::get_params(req);
-				async move {
-					let Auth(user) = Auth::extract(params).await?;
-					if user.role < models::UserRole::$min_role {
-						Err(AuthError::Forbidden)
-					} else {
-						Ok(Self(user))
-					}
+				let Auth(user) = Auth::extract(params).await?;
+				if user.role < models::UserRole::$min_role {
+					Err(AuthError::Forbidden)
+				} else {
+					Ok(Self(user))
 				}
 			}
 		}

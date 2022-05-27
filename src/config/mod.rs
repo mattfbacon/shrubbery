@@ -1,8 +1,8 @@
-use crate::token::Key as TokenKey;
+pub use bindable::BindableAddr;
 use log::LevelFilter;
 use serde::Deserialize;
 
-pub use bindable::BindableAddr;
+use crate::token::Key as TokenKey;
 
 #[derive(Deserialize)]
 pub struct Config {

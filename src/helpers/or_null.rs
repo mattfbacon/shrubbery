@@ -1,6 +1,7 @@
+use std::borrow::Cow;
+
 use serde::de::{Deserializer, Error as _};
 use serde::Deserialize;
-use std::borrow::Cow;
 
 #[derive(Deserialize, Debug)]
 #[serde(from = "Impl<T>")]

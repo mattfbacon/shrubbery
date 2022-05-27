@@ -16,10 +16,11 @@ pub fn is_in_past(t: &Timestamp) -> bool {
 
 /// for `#[serde(with)]`
 pub mod html_date {
-	use super::Date;
 	use chrono::Utc;
 	use serde::de::{self, Deserialize, Deserializer};
 	use serde::ser::{Serialize, Serializer};
+
+	use super::Date;
 
 	pub static FORMAT: &str = "%Y-%m-%d";
 	pub fn format(date: &Date) -> impl std::fmt::Display {
@@ -42,9 +43,10 @@ pub mod html_date {
 
 /// for `#[serde(with)]`
 pub mod html_time {
-	use super::Time;
 	use serde::de::{self, Deserialize, Deserializer};
 	use serde::ser::{Serialize, Serializer};
+
+	use super::Time;
 
 	pub static FORMAT: &str = "%T%.f";
 	pub fn format(time: &Time) -> impl std::fmt::Display {

@@ -1,6 +1,7 @@
+use ormx::Table;
+
 use super::media_type::MediaType;
 use super::BigId;
-use ormx::Table;
 
 pub type FileId = BigId;
 

@@ -1,6 +1,7 @@
+use ormx::Table;
+
 use super::{Id, TagCategoryId, UserId};
 use crate::timestamp::Timestamp;
-use ormx::Table;
 
 pub type TagId = Id;
 

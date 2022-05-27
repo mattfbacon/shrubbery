@@ -1,11 +1,14 @@
-use crate::config::Config;
-use crate::database::models;
-use crate::database::Database;
-use crate::helpers::internal_server_error;
-use crate::percent::PercentEncodedString;
-use actix_web::http::StatusCode as HttpStatus;
-use actix_web::{web, Either, HttpResponse, Responder};
+use std::sync::Arc;
+
+use axum::response::{ErrorResponse, IntoResponse, Redirect, Response};
+use axum::{extract, Router};
 use serde::Deserialize;
+
+use crate::config::Config;
+use crate::database::{models, Database};
+use crate::error;
+use crate::helpers::cookie::CookiePart;
+use crate::percent::PercentEncodedString;
 
 #[derive(Deserialize)]
 pub struct ReturnUrl {
@@ -15,15 +18,16 @@ pub struct ReturnUrl {
 
 #[derive(askama::Template)]
 #[template(path = "login.html")]
-struct LoginTemplate {
+struct Template {
 	error: Option<String>,
 	return_url: Option<PercentEncodedString>,
 }
+crate::helpers::impl_into_response!(Template);
 
 pub async fn get_handler(
-	web::Query(ReturnUrl { return_url }): web::Query<ReturnUrl>,
-) -> impl Responder {
-	LoginTemplate {
+	extract::Query(ReturnUrl { return_url }): extract::Query<ReturnUrl>,
+) -> impl IntoResponse {
+	Template {
 		error: None,
 		return_url,
 	}
@@ -42,62 +46,60 @@ const fn default_keep_logged_in() -> bool {
 }
 
 pub async fn post_handler(
-	web::Form(LoginRequest {
+	extract::Form(LoginRequest {
 		username,
 		password,
 		keep_logged_in,
-	}): web::Form<LoginRequest>,
-	web::Query(ReturnUrl { return_url }): web::Query<ReturnUrl>,
-	database: web::Data<Database>,
-	config: web::Data<Config>,
-) -> actix_web::Result<Either</* private */ impl Responder, HttpResponse>> {
+	}): extract::Form<LoginRequest>,
+	extract::Query(ReturnUrl { return_url }): extract::Query<ReturnUrl>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+	extract::Extension(config): extract::Extension<Arc<Config>>,
+) -> Result<Response, ErrorResponse> {
 	macro_rules! err {
 		($($tok:tt)+) => {
-			Ok(Either::Left(LoginTemplate { error: Some(format!($($tok)+)), return_url }))
+			Ok(Template { error: Some(format!($($tok)+)), return_url }.into_response())
 		};
 	}
 
-	let user = models::User::by_username(&**database, &username)
+	let database = &*database;
+
+	let user = models::User::by_username(database, &username)
 		.await
-		.map_err(internal_server_error)?;
+		.map_err(error::Sqlx)?;
 	let mut user = match user {
 		Some(user) => user,
 		None => return err!("Unknown user {:?}", username),
 	};
 	if !user
 		.verify_password(&password)
-		.map_err(internal_server_error)?
+		.map_err(|_| error::PasswordHash)?
 	{
 		return err!("Invalid password");
 	}
 
 	user
-		.set_last_login(&**database, Some(crate::timestamp::now()))
+		.set_last_login(database, Some(crate::timestamp::now()))
 		.await
-		.map_err(internal_server_error)?;
+		.map_err(error::Sqlx)?;
 
 	let token = crate::token::Token::new(user.id);
 	let token_cookie = token
 		.encrypt_to_cookie(&config.cookie_signing_key, keep_logged_in)
-		.map_err(internal_server_error)?;
+		.map_err(error::Encrypt)?;
 
-	Ok(Either::Right(
-		HttpResponse::build(HttpStatus::SEE_OTHER)
-			.insert_header((
-				"Location",
-				return_url
+	Ok(
+		(
+			CookiePart(token_cookie),
+			Redirect::to(
+				&return_url
 					.map(|PercentEncodedString(decoded)| decoded)
 					.unwrap_or_else(|| "/".to_owned()),
-			))
-			.cookie(token_cookie)
-			.body("redirecting shortly!"),
-	))
+			),
+		)
+			.into_response(),
+	)
 }
 
-pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(
-		web::resource("")
-			.route(web::get().to(get_handler))
-			.route(web::post().to(post_handler)),
-	);
+pub fn configure() -> Router {
+	Router::new().route("/", axum::routing::get(get_handler).post(post_handler))
 }

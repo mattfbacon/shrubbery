@@ -5,34 +5,64 @@ edition = "2021"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-actix-web = { version = "4", features = [] }
-aes-gcm = { version = "0.9", features = ["std"] }
-anyhow = "1"
-argon2 = { version = "0.4", features = ["password-hash", "std"] }
-askama = { version = "0.11", features = ["with-actix-web"] }
-askama_actix = "0.13"
+# askama
+askama = { version = "0.11" }
 askama_escape = "0.10"
+
+# async
+futures = "0.3"
+tokio = { version = "1", features = ["net", "rt-multi-thread", "macros"] }
+
+# cryptography
+aes-gcm = { version = "0.9", features = ["std"] }
+argon2 = { version = "0.4", features = ["password-hash", "std"] }
+
+# data formats, {de,}serialization, {en,de}cryption
 base64 = "0.13"
-bindable = "^0.1.2"
 bincode = "1"
+percent-encoding = "2"
+serde = { version = "1", features = ["derive"] }
+
+# logging
+log = "0.4"
+simple_logger = "2"
+
+# parsing
+nom = "7"
+
+# sql
+ormx = { git = "https://github.com/mattfbacon/ormx", rev = "9062fcd8820370c8218de417bd39161d52592d0b", features = [
+	"postgres",
+] }
+sqlx = { version = "0.5", features = [
+	"chrono",
+	"postgres",
+	"runtime-tokio-rustls",
+	"macros",
+	"migrate",
+] }
+
+# web
+axum = { version = "0.5", features = [
+	"headers",
+	"http1",
+	"http2",
+	"multipart",
+	"tower-log",
+	"query",
+] }
+axum-extra = { version = "0.3", features = ["cookie"] }
+cookie = "0.16"
+headers = "0.3"
+http = "0.2"
+http-body = "0.4"
+hyper = "0.14"
+tower-http = { version = "0.3", features = ["fs"] }
+
+# misc
+bindable = "^0.1.2"
 chrono = { version = "0.4", features = ["serde"] }
 figment = { version = "0.10", features = ["env", "toml"] }
-futures = "0.3"
-log = "0.4"
-nom = "7"
-percent-encoding = "2"
 rand = "0.8"
-serde = { version = "1", features = ["derive"] }
-simple_logger = "2"
 smartstring = "1"
 thiserror = "1"
-tokio = { version = "1", features = ["fs"] }
-
-[dependencies.sqlx]
-version = "0.5"
-features = ["chrono", "postgres", "runtime-actix-rustls", "macros", "migrate"]
-
-[dependencies.ormx]
-git = "https://github.com/mattfbacon/ormx"
-rev = "9062fcd8820370c8218de417bd39161d52592d0b"
-features = ["postgres"]

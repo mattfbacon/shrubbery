@@ -1,8 +1,12 @@
+use std::sync::Arc;
+
+use axum::response::{ErrorResponse, IntoResponse};
+use axum::{extract, Router};
+
 use crate::database::{models, Database};
+use crate::error;
 use crate::helpers::auth::Admin;
 use crate::helpers::pagination;
-use actix_web::http::StatusCode as HttpStatus;
-use actix_web::{web, Responder, ResponseError};
 
 mod delete;
 mod edit;
@@ -23,45 +27,27 @@ struct Template {
 	tag_categories: Vec<TagCategoryWithUserResolved>,
 	pagination: pagination::Template,
 }
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-	#[error("invalid or nonexistent page")]
-	Page,
-	#[error("user not found")]
-	NotFound,
-	#[error("{0}")]
-	Sqlx(#[from] sqlx::Error),
-}
-
-impl ResponseError for Error {
-	fn status_code(&self) -> HttpStatus {
-		match self {
-			Self::Page => HttpStatus::NOT_FOUND,
-			Self::NotFound => HttpStatus::NOT_FOUND,
-			Self::Sqlx(..) => HttpStatus::INTERNAL_SERVER_ERROR,
-		}
-	}
-
-	fn error_response(&self) -> actix_web::HttpResponse {
-		crate::routes::error::error_response(self)
-	}
-}
+crate::helpers::impl_into_response!(Template);
 
 pub async fn get_handler(
 	Admin(self_user): Admin,
-	web::Query(pagination): web::Query<pagination::Query>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
+	extract::Query(pagination): extract::Query<pagination::Query>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
+	let database = &*database;
+
 	let num_pages = std::cmp::max(
-		models::TagCategory::count(&**database).await? / pagination.page_size(),
+		models::TagCategory::count(database)
+			.await
+			.map_err(error::Sqlx)?
+			/ pagination.page_size(),
 		1,
 	);
 	if pagination.page() >= num_pages {
-		return Err(Error::Page);
+		return Err(error::EntityNotFound("page").into());
 	}
 
-	let tag_categories = sqlx::query_as!(TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time, users.username as "created_by?" FROM tag_categories LEFT JOIN users ON tag_categories.created_by = users.id ORDER BY tag_categories.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(&**database).await?;
+	let tag_categories = sqlx::query_as!(TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time, users.username as "created_by?" FROM tag_categories LEFT JOIN users ON tag_categories.created_by = users.id ORDER BY tag_categories.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await.map_err(error::Sqlx)?;
 
 	Ok(Template {
 		self_user,
@@ -79,10 +65,10 @@ pub struct CreateRequest {
 
 pub async fn post_handler(
 	Admin(self_user): Admin,
-	web::Query(pagination): web::Query<pagination::Query>,
-	web::Form(req): web::Form<CreateRequest>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
+	extract::Query(pagination): extract::Query<pagination::Query>,
+	extract::Form(req): extract::Form<CreateRequest>,
+	database: extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
 	use ormx::Insert as _;
 
 	models::tag_category::Create {
@@ -96,20 +82,17 @@ pub async fn post_handler(
 		created_by: Some(self_user.id),
 	}
 	.insert(&**database)
-	.await?;
+	.await
+	.map_err(error::Sqlx)?;
 
-	get_handler(Admin(self_user), web::Query(pagination), database).await
+	get_handler(Admin(self_user), extract::Query(pagination), database).await
 }
 
-pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(
-		web::resource("")
-			.route(web::get().to(get_handler))
-			.route(web::post().to(post_handler)),
-	);
-	app.service(
-		web::scope("/{tag_category_id:\\d+}")
-			.configure(delete::configure)
-			.configure(edit::configure),
-	);
+pub fn configure() -> Router {
+	Router::new()
+		.route("/", axum::routing::get(get_handler).post(post_handler))
+		.nest(
+			"/:tag_category_id",
+			delete::configure().merge(edit::configure()),
+		)
 }

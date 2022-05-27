@@ -1,7 +1,13 @@
+use std::sync::Arc;
+
+use axum::response::ErrorResponse;
+use axum::routing::get;
+use axum::Router;
+use axum::{extract, response::IntoResponse};
+
 use crate::database::{models, Database};
+use crate::error;
 use crate::helpers::{auth, pagination};
-use actix_web::http::StatusCode as HttpStatus;
-use actix_web::{web, Responder, ResponseError};
 
 mod delete;
 mod edit;
@@ -24,50 +30,29 @@ struct Template {
 	tag_categories: Vec<(models::TagCategoryId, String)>,
 	pagination: pagination::Template,
 }
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-	#[error("invalid or nonexistent page")]
-	Page,
-	#[error("user not found")]
-	NotFound,
-	#[error("{0}")]
-	Sqlx(#[from] sqlx::Error),
-}
-
-impl ResponseError for Error {
-	fn status_code(&self) -> HttpStatus {
-		match self {
-			Self::Page => HttpStatus::NOT_FOUND,
-			Self::NotFound => HttpStatus::NOT_FOUND,
-			Self::Sqlx(..) => HttpStatus::INTERNAL_SERVER_ERROR,
-		}
-	}
-
-	fn error_response(&self) -> actix_web::HttpResponse {
-		crate::routes::error::error_response(self)
-	}
-}
+crate::helpers::impl_into_response!(Template);
 
 pub async fn get_handler(
 	auth::Auth(self_user): auth::Auth,
-	web::Query(pagination): web::Query<pagination::Query>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
-	let database = &**database;
+	extract::Query(pagination): extract::Query<pagination::Query>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
+	let database = &*database;
 
 	let num_pages = std::cmp::max(
-		models::Tag::count(database).await? / pagination.page_size(),
+		models::Tag::count(database).await.map_err(error::Sqlx)? / pagination.page_size(),
 		1,
 	);
 
 	if pagination.page() >= num_pages {
-		return Err(Error::Page);
+		return Err(error::EntityNotFound("page").into());
 	}
 
-	let tags = sqlx::query_as!(Tag, r#"SELECT tags.id, tags.name, tags.description, tag_categories.name as "category?", tags.created_time, users.username as "created_by?" FROM tags LEFT JOIN users ON tags.created_by = users.id LEFT JOIN tag_categories ON tags.category = tag_categories.id ORDER BY tags.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await?;
+	let tags = sqlx::query_as!(Tag, r#"SELECT tags.id, tags.name, tags.description, tag_categories.name as "category?", tags.created_time, users.username as "created_by?" FROM tags LEFT JOIN users ON tags.created_by = users.id LEFT JOIN tag_categories ON tags.category = tag_categories.id ORDER BY tags.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await.map_err(error::Sqlx)?;
 
-	let tag_categories = shared::get_tag_categories_lean(database).await?;
+	let tag_categories = shared::get_tag_categories_lean(database)
+		.await
+		.map_err(error::Sqlx)?;
 
 	Ok(Template {
 		self_user,
@@ -86,10 +71,10 @@ pub struct CreateRequest {
 
 pub async fn post_handler(
 	auth::Editor(self_user): auth::Editor,
-	pagination: web::Query<pagination::Query>,
-	web::Form(req): web::Form<CreateRequest>,
-	database: web::Data<Database>,
-) -> Result<impl Responder, Error> {
+	pagination: extract::Query<pagination::Query>,
+	extract::Form(req): extract::Form<CreateRequest>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> Result<impl IntoResponse, ErrorResponse> {
 	use ormx::Insert as _;
 
 	models::tag::Create {
@@ -102,21 +87,20 @@ pub async fn post_handler(
 		category: req.category,
 		created_by: Some(self_user.id),
 	}
-	.insert(&**database)
-	.await?;
+	.insert(&*database)
+	.await
+	.map_err(error::Sqlx)?;
 
-	get_handler(auth::Auth(self_user), pagination, database).await
+	get_handler(
+		auth::Auth(self_user),
+		pagination,
+		extract::Extension(database),
+	)
+	.await
 }
 
-pub fn configure(app: &mut actix_web::web::ServiceConfig) {
-	app.service(
-		web::resource("")
-			.route(web::get().to(get_handler))
-			.route(web::post().to(post_handler)),
-	);
-	app.service(
-		web::scope("/{tag_id:\\d+}")
-			.configure(delete::configure)
-			.configure(edit::configure),
-	);
+pub fn configure() -> Router {
+	Router::new()
+		.route("/", get(get_handler).post(post_handler))
+		.nest("/:tag_id", delete::configure().merge(edit::configure()))
 }

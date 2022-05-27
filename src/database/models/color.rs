@@ -1,8 +1,9 @@
+use std::borrow::Cow;
+use std::str::FromStr;
+
 use sqlx::encode::IsNull;
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo, PgValueRef};
 use sqlx::{Decode, Encode, Postgres, Type};
-use std::borrow::Cow;
-use std::str::FromStr;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

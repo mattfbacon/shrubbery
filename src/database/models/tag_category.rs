@@ -1,6 +1,7 @@
+use ormx::Table;
+
 use super::{Color, Id, UserId};
 use crate::timestamp::Timestamp;
-use ormx::Table;
 
 pub type TagCategoryId = Id;
 

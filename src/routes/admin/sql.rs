@@ -1,6 +1,10 @@
+use std::sync::Arc;
+
+use axum::response::IntoResponse;
+use axum::{extract, Router};
+
 use crate::database::Database;
-use crate::helpers::auth::Admin;
-use actix_web::{web, Responder};
+use crate::helpers::auth;
 
 #[derive(serde::Deserialize)]
 pub struct PostData {
@@ -8,14 +12,14 @@ pub struct PostData {
 }
 
 pub async fn post_handler(
-	Admin(_self_user): Admin,
-	web::Form(PostData { sql }): web::Form<PostData>,
-	database: web::Data<Database>,
-) -> impl Responder {
-	let result = sqlx::query(&sql).execute(&**database).await;
+	auth::Admin(_self_user): auth::Admin,
+	extract::Form(PostData { sql }): extract::Form<PostData>,
+	extract::Extension(database): extract::Extension<Arc<Database>>,
+) -> impl IntoResponse {
+	let result = sqlx::query(&sql).execute(&*database).await;
 	format!("{:#?}", result)
 }
 
-pub fn configure(app: &mut web::ServiceConfig) {
-	app.service(web::resource("").route(web::post().to(post_handler)));
+pub fn configure() -> Router {
+	Router::new().route("/", axum::routing::post(post_handler))
 }

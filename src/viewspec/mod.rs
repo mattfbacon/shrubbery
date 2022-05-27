@@ -1,5 +1,6 @@
-use smartstring::alias::String as SmartString;
 use std::str::FromStr;
+
+use smartstring::alias::String as SmartString;
 
 pub mod evaluate;
 mod parse;

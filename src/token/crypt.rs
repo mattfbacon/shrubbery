@@ -1,6 +1,6 @@
-use actix_web::cookie::{self, Cookie};
 use aes_gcm::aead::NewAead as _;
 use aes_gcm::{Aes256Gcm, Nonce};
+use cookie::Cookie;
 
 #[derive(Debug, thiserror::Error)]
 pub enum EncryptError {

@@ -1,6 +1,7 @@
+use ormx::Table;
+
 use super::{Id, UserPassword, UserRole};
 use crate::timestamp::Timestamp;
-use ormx::Table;
 
 pub type UserId = Id;
 

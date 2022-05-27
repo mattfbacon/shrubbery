@@ -1,4 +1,3 @@
-#![feature(type_alias_impl_trait)]
 #![deny(
 	absolute_paths_not_starting_with_crate,
 	future_incompatible,
@@ -14,64 +13,55 @@
 	private_in_public,
 	rust_2018_idioms
 )]
+#![forbid(unsafe_code)]
 
-use actix_web::{middleware as mid, web, App as ActixApp, HttpServer};
-use anyhow::Context as _;
 use std::sync::Arc;
+
+use axum::Extension;
 
 mod config;
 mod database;
+mod error;
 mod helpers;
 mod percent;
 mod routes;
+mod server;
 mod timestamp;
 mod token;
 mod viewspec;
 
-use config::BindableAddr;
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+	#[error("reading configuration: {0}")]
+	Config(#[from] figment::Error),
+	#[error("initializing logger: {0}")]
+	Logger(#[from] log::SetLoggerError),
+	#[error("connecting to database: {0}")]
+	ConnectDb(#[from] sqlx::Error),
+	#[error("running server: {0}")]
+	RunServer(#[from] hyper::Error),
+	#[error("binding to Unix socket at path {1}: {0}")]
+	BindUnix(#[source] std::io::Error, std::path::PathBuf),
+}
 
-async fn main_() -> anyhow::Result<()> {
-	let config = config::config().context("Reading configuration")?;
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+	let config = config::config()?;
 	let config = Arc::new(config);
 
 	simple_logger::SimpleLogger::new()
 		.with_level(config.log_level.external)
 		.with_module_level(env!("CARGO_PKG_NAME"), config.log_level.internal)
-		.init()
-		.context("Initializing logging")?;
+		.init()?;
 
 	let database = database::connect(&config.database_url)
 		.await
-		.context("Initializing database manager")
 		.map(Arc::new)?;
 
-	let mut http = {
-		let config = Arc::clone(&config);
-		HttpServer::new(move || {
-			ActixApp::new()
-				.app_data(web::Data::from(Arc::clone(&config)))
-				.app_data(web::Data::from(Arc::clone(&database)))
-				.wrap(mid::Logger::default())
-				.configure(routes::configure)
-				.default_service(routes::error::default_handler)
-				.wrap(mid::NormalizePath::trim())
-		})
-	};
-	if let Some(num_workers) = config.num_workers {
-		http = http.workers(num_workers);
-	}
+	let mut app = routes::configure();
+	app = app.layer(Extension(database));
+	app = app.layer(Extension(Arc::clone(&config)));
 
 	log::info!("Listening on {}", config.address);
-	match &config.address {
-		BindableAddr::Tcp(addr) => http.bind(addr),
-		BindableAddr::Unix(path) => http.bind_uds(path),
-	}
-	.context("Binding server to address")?
-	.run()
-	.await
-	.context("Running server")
-}
-
-fn main() -> anyhow::Result<()> {
-	actix_web::rt::System::new().block_on(main_())
+	server::run(app, &config.address).await
 }

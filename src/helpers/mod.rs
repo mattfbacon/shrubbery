@@ -1,22 +1,11 @@
-use actix_web::cookie::Cookie;
-use actix_web::http::StatusCode as HttpStatus;
+use http::status::StatusCode;
 
 pub mod auth;
-pub mod just_file;
+pub mod cookie;
 pub mod or_null;
 pub mod pagination;
 
 pub use or_null::OrNull;
-
-pub fn internal_server_error<T>(err: T) -> actix_web::error::InternalError<T> {
-	actix_web::error::InternalError::new(err, actix_web::http::StatusCode::INTERNAL_SERVER_ERROR)
-}
-
-pub fn remove_cookie(name: &str) -> Cookie<'_> {
-	let mut ret = Cookie::new(name, "");
-	ret.make_removal();
-	ret
-}
 
 pub fn set_none_if_empty(opt: &mut Option<String>) {
 	if opt.as_deref() == Some("") {
@@ -24,11 +13,30 @@ pub fn set_none_if_empty(opt: &mut Option<String>) {
 	}
 }
 
-pub fn io_error_to_status(err: &std::io::Error) -> HttpStatus {
+pub fn io_error_to_status(err: &std::io::Error) -> StatusCode {
 	use std::io::ErrorKind;
 	match err.kind() {
-		ErrorKind::NotFound => HttpStatus::NOT_FOUND,
-		ErrorKind::PermissionDenied => HttpStatus::FORBIDDEN,
-		_ => HttpStatus::INTERNAL_SERVER_ERROR,
+		ErrorKind::NotFound => StatusCode::NOT_FOUND,
+		ErrorKind::PermissionDenied => StatusCode::FORBIDDEN,
+		_ => StatusCode::INTERNAL_SERVER_ERROR,
 	}
 }
+
+/// This is temporary while askama fixes their issues with deriving `axum::IntoResponse`
+macro_rules! impl_into_response {
+	($name:ident) => {
+		impl axum::response::IntoResponse for $name {
+			fn into_response(self) -> axum::response::Response {
+				match askama::Template::render(&self) {
+					Ok(page) => (
+						[("Content-Type", <$name as askama::Template>::MIME_TYPE)],
+						page,
+					)
+						.into_response(),
+					Err(err) => (http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
+				}
+			}
+		}
+	};
+}
+pub(crate) use impl_into_response;

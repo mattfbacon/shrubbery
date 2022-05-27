@@ -1,20 +1,31 @@
-use actix_web::{get, web::ServiceConfig, HttpResponse, Responder};
+use axum::{
+	response::{IntoResponse, Response},
+	routing::get,
+	Router,
+};
 
-#[get("/favicon.ico")]
-async fn favicon() -> impl Responder {
-	HttpResponse::Ok()
-		.insert_header(("Content-Type", "image/x-icon"))
-		.body::<&[u8]>(std::include_bytes!("../../static/favicon.ico"))
+async fn favicon() -> impl IntoResponse {
+	(
+		Response::builder()
+			.header("Content-Type", "image/x-icon")
+			.body(())
+			.unwrap(),
+		std::include_bytes!("../../static/favicon.ico").as_slice(),
+	)
 }
 
-#[get("/res/style/main.css")]
-async fn css() -> impl Responder {
-	HttpResponse::Ok()
-		.insert_header(("Content-Type", "text/css"))
-		.body::<&[u8]>(std::include_bytes!("../../static/res/style/main.css"))
+async fn css() -> impl IntoResponse {
+	(
+		Response::builder()
+			.header("Content-Type", "text/css")
+			.body(())
+			.unwrap(),
+		std::include_bytes!("../../static/res/style/main.css").as_slice(),
+	)
 }
 
-pub fn configure(app: &mut ServiceConfig) {
-	app.service(favicon);
-	app.service(css);
+pub fn configure() -> Router {
+	Router::new()
+		.route("/favicon.ico", get(favicon))
+		.route("/res/style/main.css", get(css))
 }

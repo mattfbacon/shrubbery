@@ -1,5 +1,6 @@
-use super::{FileId, Id, TagId};
 use ormx::Table;
+
+use super::{FileId, Id, TagId};
 
 pub type FileTagId = Id;
 #[derive(Table)]
