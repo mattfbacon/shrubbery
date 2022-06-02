@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use axum::response::ErrorResponse;
+use axum::response::{ErrorResponse, IntoResponse};
 use axum::routing::get;
-use axum::Router;
-use axum::{extract, response::IntoResponse};
+use axum::{extract, Router};
 
 use crate::database::{models, Database};
 use crate::error;

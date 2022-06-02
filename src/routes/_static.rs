@@ -1,8 +1,6 @@
-use axum::{
-	response::{IntoResponse, Response},
-	routing::get,
-	Router,
-};
+use axum::response::{IntoResponse, Response};
+use axum::routing::get;
+use axum::Router;
 
 async fn favicon() -> impl IntoResponse {
 	(

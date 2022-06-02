@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
-use axum::response::{ErrorResponse, Redirect, Response};
-use axum::Router;
-use axum::{extract, response::IntoResponse};
+use axum::response::{ErrorResponse, IntoResponse, Redirect, Response};
+use axum::{extract, Router};
 use serde::Deserialize;
 
 use super::login::ReturnUrl;

@@ -1,17 +1,14 @@
-use std::{
-	pin::Pin,
-	sync::Arc,
-	task::{Context, Poll},
-};
+use std::pin::Pin;
+use std::sync::Arc;
+use std::task::{Context, Poll};
 
-use axum::{extract::connect_info::Connected, Router};
+use axum::extract::connect_info::Connected;
+use axum::Router;
 use bindable::BindableAddr;
 use futures::ready;
 use hyper::server::accept::Accept;
-use tokio::net::{
-	unix::{SocketAddr, UCred},
-	UnixListener, UnixStream,
-};
+use tokio::net::unix::{SocketAddr, UCred};
+use tokio::net::{UnixListener, UnixStream};
 
 use super::Error;
 

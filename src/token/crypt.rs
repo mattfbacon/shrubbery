@@ -100,8 +100,7 @@ impl super::Token {
 	}
 
 	pub fn decrypt(encrypted_and_encoded: &str, key: &Key) -> Result<Option<Self>, DecryptError> {
-		use aes_gcm::aead::Aead as _;
-		use aes_gcm::aead::Payload;
+		use aes_gcm::aead::{Aead as _, Payload};
 
 		let encrypted = base64::decode(encrypted_and_encoded)?;
 		if encrypted.len() < NONCE_LEN {

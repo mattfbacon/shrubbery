@@ -1,7 +1,9 @@
 use std::fmt::{self, Display, Formatter};
 
 use percent_encoding::percent_decode;
-use serde::{de::Deserializer, de::Error as DeError, ser::Serializer, Deserialize, Serialize};
+use serde::de::{Deserializer, Error as DeError};
+use serde::ser::Serializer;
+use serde::{Deserialize, Serialize};
 
 #[inline]
 pub fn percent_encode(data: &[u8]) -> String {
