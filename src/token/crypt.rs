@@ -86,7 +86,7 @@ impl super::Token {
 		let encoded = base64::encode(&encrypted);
 		// 4. create cookie with the proper options
 		Ok(
-			Cookie::build("token", encoded)
+			Cookie::build(super::COOKIE_NAME, encoded)
 				.expires(if keep_logged_in {
 					Some(std::time::SystemTime::from(self.expires_at).into())
 				} else {
@@ -121,14 +121,14 @@ impl super::Token {
 
 #[cfg(test)]
 mod test {
-	use super::super::Token;
+	use super::super::{Token, COOKIE_NAME};
 	use super::Key;
 	#[test]
 	fn encryption_roundtrip() {
 		let key = Key::generate();
 		let original = Token::new(0);
 		let encrypted_cookie = original.encrypt_to_cookie(&key, false).unwrap();
-		assert_eq!(encrypted_cookie.name(), "token");
+		assert_eq!(encrypted_cookie.name(), COOKIE_NAME);
 		let decrypted = Token::decrypt(encrypted_cookie.value(), &key)
 			.unwrap()
 			.unwrap();

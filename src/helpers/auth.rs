@@ -8,6 +8,7 @@ use headers::HeaderMapExt as _;
 use http::StatusCode;
 
 use crate::database::models::{self, User};
+use crate::helpers::cookie::CookiePart;
 
 pub struct Auth(pub User);
 
@@ -127,14 +128,7 @@ impl IntoResponse for AuthError {
 		let mut builder = Response::builder().status(self.status_code());
 
 		if self.should_remove_token() {
-			builder.headers_mut().unwrap().insert(
-				"Set-Cookie",
-				crate::token::remove_cookie()
-					.encoded()
-					.to_string()
-					.parse()
-					.unwrap(),
-			);
+			builder = CookiePart::new_removal(crate::token::COOKIE_NAME).onto_builder(builder);
 		}
 
 		if let Some(redirect_to) = self.redirect_to() {

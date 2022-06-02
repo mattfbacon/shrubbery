@@ -1,5 +1,4 @@
 use chrono::Duration;
-use cookie::Cookie;
 use serde::{Deserialize, Serialize};
 
 use crate::database::models::UserId;
@@ -29,8 +28,4 @@ impl Token {
 	}
 }
 
-pub fn remove_cookie() -> Cookie<'static> {
-	let mut cookie = Cookie::named("token");
-	cookie.make_removal();
-	cookie
-}
+pub static COOKIE_NAME: &str = "token";

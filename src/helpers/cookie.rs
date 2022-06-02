@@ -20,11 +20,19 @@ impl<'a> From<Cookie<'a>> for CookiePart<'a> {
 }
 
 impl CookiePart<'_> {
-	fn encode(&self) -> http::HeaderValue {
+	pub fn encode(&self) -> http::HeaderValue {
 		self.0.to_string().parse().unwrap() // we assert that an encoded value should always be a valid header value
 	}
 
-	fn onto_builder(&self, builder: http::response::Builder) -> http::response::Builder {
+	pub fn onto_builder(&self, builder: http::response::Builder) -> http::response::Builder {
 		builder.header("Set-Cookie", self.encode())
+	}
+}
+
+impl<'a> CookiePart<'a> {
+	pub fn new_removal(name: &'a str) -> Self {
+		let mut cookie = Cookie::named(name);
+		cookie.make_removal();
+		Self(cookie)
 	}
 }

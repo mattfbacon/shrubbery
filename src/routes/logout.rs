@@ -5,7 +5,7 @@ use crate::helpers::cookie::CookiePart;
 
 pub async fn handler() -> impl IntoResponse {
 	(
-		CookiePart(crate::token::remove_cookie()),
+		CookiePart::new_removal(crate::token::COOKIE_NAME),
 		Redirect::to("/to"),
 	)
 }
