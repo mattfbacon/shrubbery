@@ -1,0 +1,22 @@
+<!-- prettier-ignore -->
+{% extends "_layouts/default.html" %}
+
+{% block title -%}
+	Upload File
+{%- endblock %}
+
+{% block content %}
+{% include "_partials/navbar.html" %}
+
+<h1>Upload File</h1>
+<form method="post" enctype="multipart/form-data">
+	<label for="name">Name</label>
+	<input type="text" id="name" name="name" required />
+	<label for="description">Description</label>
+	<textarea name="description" name="description" placeholder="(no description)"></textarea>
+	<label for="file">File</label>
+	<input type="file" name="file" id="file" required />
+	<input type="submit" value="Upload" />
+</form>
+
+{% endblock %}

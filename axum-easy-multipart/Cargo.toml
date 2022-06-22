@@ -1,0 +1,18 @@
+[package]
+name = "axum-easy-multipart"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1"
+axum-easy-multipart-derive = { path = "../axum-easy-multipart-derive" }
+bytes = "1"
+mime = "0.3"
+multer = "2"
+tempfile = { version = "3", optional = true }
+thiserror = "1"
+tokio = { version = "1", features = ["fs", "io-util"], optional = true }
+
+[features]
+default = ["file"]
+file = ["tempfile", "tokio"]

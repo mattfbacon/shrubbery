@@ -1,0 +1,78 @@
+<!-- prettier-ignore -->
+{% extends "_layouts/default.html" %}
+
+{% block title -%}
+	{{file.name}}
+{%- endblock %}
+
+{% block content %}
+{% include "_partials/navbar.html" %}
+
+{% if let Some(action) = action -%}
+	<p>{{action.as_message()}} the file</p>
+{%- endif %}
+
+<h1>{{file.name}}</h1>
+{% if let Some(description) = file.description -%}
+	<p>{{description}}</p>
+{%- endif %}
+
+{% match file.media_type -%}
+{%- when FileMediaType::Image -%}
+	<img id="file-embed" alt="{{file.name}}" src="?direct">
+{%- when FileMediaType::Video -%}
+	<video id="file-embed" controls>
+		<source src="?direct">
+	</video>
+{%- endmatch %}
+
+{% if self_user.role >= models::UserRole::Editor -%}
+	<h2>Update</h2>
+	<form method="post" enctype="multipart/form-data">
+		<input type="hidden" name="action" value="update">
+		<label for="name">Name</label>
+		<input type="text" id="name" name="name" value="{{file.name}}" required>
+		<label for="description">Description</label>
+		<textarea name="description" name="description" placeholder="(no description)">{{file.description.as_deref().unwrap_or("")}}</textarea>
+		<label for="media-type">Media Type</label>
+		<select id="media-type" name="media_type">
+			{{FileMediaType::display_options(Some(file.media_type.clone()))|safe}}
+		</select>
+		<input type="submit" value="Update">
+		<input type="reset">
+	</form>
+
+	<h2>Update Tags</h2>
+	<form method="post" enctype="multipart/form-data">
+		<input type="hidden" name="action" value="update-tags">
+		<label for="tags">Tags</label>
+		<select multiple id="tags" name="tags">
+			{% for (category_name, tags) in tags_by_category -%}
+				<optgroup label="{{category_name.as_deref().unwrap_or("(no category)")}}">
+					{% for (id, name, present) in tags -%}
+						<option value="{{id}}" {% if present %}selected{% endif %}>{{name}}</option>
+					{%- endfor %}
+				</optgroup>
+			{%- endfor %}
+		</select>
+		<input type="submit" value="Update Tags">
+		<input type="reset">
+	</form>
+
+	<h2>Replace</h2>
+	<form method="post" enctype="multipart/form-data">
+		<input type="hidden" name="action" value="replace">
+		<label for="file">File</label>
+		<input type="file" name="file" id="file">
+		<input type="submit" value="Replace">
+		<input type="reset">
+	</form>
+
+	<h2>Delete</h2>
+	<form method="post" enctype="multipart/form-data">
+		<input type="hidden" name="action" value="delete">
+		<input type="submit" value="Delete">
+	</form>
+{%- endif %}
+
+{% endblock %}
