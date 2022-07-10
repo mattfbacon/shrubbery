@@ -177,7 +177,7 @@ pub async fn post_handler(
 			.fetch_optional(database)
 			.await
 			.map_err(error::Sqlx)?.ok_or_else(|| {
-				log::warn!("file with ID {file_id} existed in filesystem but not in database");
+				tracing::warn!("file with ID {file_id} existed in filesystem but not in database");
 				error::EntityNotFound("file")
 			})?;
 			Ok(

@@ -25,8 +25,8 @@ percent-encoding = "2"
 serde = { version = "1", features = ["derive"] }
 
 # logging
-log = "0.4"
-simple_logger = "2"
+tracing = "0.1"
+tracing-subscriber = "0.3"
 
 # parsing
 nom = "7"
@@ -57,7 +57,7 @@ headers = "0.3"
 http = "0.2"
 http-body = "0.4"
 hyper = "0.14"
-tower-http = { version = "0.3", features = ["fs"] }
+tower-http = { version = "0.3", features = ["fs", "trace"] }
 
 # misc
 axum-easy-multipart = { path = "../axum-easy-multipart" }

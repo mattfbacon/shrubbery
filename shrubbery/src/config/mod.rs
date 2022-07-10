@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 pub use bindable::BindableAddr;
-use log::LevelFilter;
 use serde::Deserialize;
+use tracing::level_filters::LevelFilter;
 
 use crate::token::Key as TokenKey;
 
@@ -30,7 +30,7 @@ where
 		.map_err(serde::de::Error::custom)
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Copy)]
 #[serde(from = "LogLevelSerdeHelper")]
 pub struct LogLevel {
 	pub internal: LevelFilter,
@@ -38,11 +38,11 @@ pub struct LogLevel {
 }
 
 const fn default_log_level_internal() -> LevelFilter {
-	LevelFilter::Info
+	LevelFilter::INFO
 }
 
 const fn default_log_level_external() -> LevelFilter {
-	LevelFilter::Warn
+	LevelFilter::WARN
 }
 
 #[derive(Deserialize)]

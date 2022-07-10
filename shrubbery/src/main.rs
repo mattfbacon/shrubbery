@@ -34,8 +34,6 @@ mod viewspec;
 pub enum Error {
 	#[error("reading configuration: {0}")]
 	Config(#[from] figment::Error),
-	#[error("initializing logger: {0}")]
-	Logger(#[from] log::SetLoggerError),
 	#[error("connecting to database: {0}")]
 	ConnectDb(#[from] sqlx::Error),
 	#[error("running server: {0}")]
@@ -56,10 +54,7 @@ async fn main() -> Result<(), Error> {
 
 	let config = Arc::new(config);
 
-	simple_logger::SimpleLogger::new()
-		.with_level(config.log_level.external)
-		.with_module_level(env!("CARGO_PKG_NAME"), config.log_level.internal)
-		.init()?;
+	init_logging(config.log_level);
 
 	let database = database::connect(&config.database_url)
 		.await
@@ -68,7 +63,32 @@ async fn main() -> Result<(), Error> {
 	let mut app = routes::configure();
 	app = app.layer(Extension(database));
 	app = app.layer(Extension(Arc::clone(&config)));
+	app = app.layer(tower_http::trace::TraceLayer::new_for_http());
 
-	log::info!("Listening on {}", config.address);
+	tracing::info!(address = %config.address, "listening");
 	server::run(app, &config.address).await
+}
+
+fn init_logging(log_level: config::LogLevel) {
+	use tracing_subscriber::filter::FilterFn;
+	use tracing_subscriber::layer::{Layer, SubscriberExt};
+	use tracing_subscriber::util::SubscriberInitExt;
+
+	let filter = FilterFn::new(move |metadata| {
+		let required_level = match metadata.module_path() {
+			Some(env!("CARGO_PKG_NAME")) => log_level.internal,
+			_ => log_level.external,
+		};
+		// "If a Level is considered less than a LevelFilter, it should be considered enabled; if greater than or equal to the LevelFilter, that level is disabled."
+		metadata.level() < &required_level
+	});
+
+	let layer = tracing_subscriber::fmt::layer()
+		.with_file(true)
+		.with_line_number(true)
+		.with_writer(std::io::stderr);
+
+	tracing_subscriber::registry()
+		.with(layer.with_filter(filter))
+		.init();
 }
