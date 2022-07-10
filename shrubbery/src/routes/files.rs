@@ -20,10 +20,10 @@ enum Action {
 impl Action {
 	fn as_message(self) -> &'static str {
 		match self {
-			Self::Created => "Created the file",
-			Self::Replaced => "Replaced the file",
-			Self::Updated => "Updated the file",
-			Self::UpdatedTags => "Updated tags for the file",
+			Self::Created => "Created",
+			Self::Replaced => "Replaced",
+			Self::Updated => "Updated",
+			Self::UpdatedTags => "Updated tags for",
 		}
 	}
 }
