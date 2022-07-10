@@ -77,12 +77,16 @@ pub trait FromMultipartField: Sized {
     async fn from_multipart_field(
         fields: &mut Fields<'_, '_>,
         field_name: &str,
+        extensions: &http::Extensions,
     ) -> crate::error::Result<Self>;
 }
 
 #[async_trait]
 pub trait FromSingleMultipartField: Sized {
-    async fn from_single_multipart_field(field: Field<'_>) -> crate::error::Result<Self>;
+    async fn from_single_multipart_field(
+        field: Field<'_>,
+        extensions: &http::Extensions,
+    ) -> crate::error::Result<Self>;
 }
 
 #[async_trait]
@@ -90,8 +94,9 @@ impl<T: FromSingleMultipartField> FromMultipartField for T {
     async fn from_multipart_field(
         fields: &mut Fields<'_, '_>,
         field_name: &str,
+        extensions: &http::Extensions,
     ) -> crate::error::Result<Self> {
         let field = fields.extract_field(field_name).await?;
-        T::from_single_multipart_field(field).await
+        T::from_single_multipart_field(field, extensions).await
     }
 }

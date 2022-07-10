@@ -14,14 +14,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-core"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf4d047478b986f14a13edad31a009e2e05cb241f9805d0d75e4cba4e129ad4d"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "futures-util",
+ "http",
+ "http-body",
+ "mime",
+]
+
+[[package]]
 name = "axum-easy-multipart"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "axum-core",
  "axum-easy-multipart-derive",
  "bytes",
+ "futures-core",
+ "http",
+ "http-body",
  "mime",
  "multer",
+ "pin-project-lite",
  "tempfile",
  "thiserror",
  "tokio",
@@ -111,6 +130,17 @@ dependencies = [
  "bytes",
  "fnv",
  "itoa",
+]
+
+[[package]]
+name = "http-body"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5f38f16d184e36f2408a55281cd658ecbd3ca05cce6d6510a176eca393e26d1"
+dependencies = [
+ "bytes",
+ "http",
+ "pin-project-lite",
 ]
 
 [[package]]

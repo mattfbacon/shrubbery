@@ -7,25 +7,32 @@ use crate::fields::{Fields, FromMultipartField, FromSingleMultipartField};
 
 #[async_trait]
 impl FromSingleMultipartField for String {
-    async fn from_single_multipart_field(field: Field<'_>) -> Result<Self> {
+    async fn from_single_multipart_field(
+        field: Field<'_>,
+        _extensions: &http::Extensions,
+    ) -> Result<Self> {
         Ok(field.text().await?)
     }
 }
 
 #[async_trait]
 impl FromSingleMultipartField for Bytes {
-    async fn from_single_multipart_field(field: Field<'_>) -> Result<Self> {
+    async fn from_single_multipart_field(
+        field: Field<'_>,
+        _extensions: &http::Extensions,
+    ) -> Result<Self> {
         Ok(field.bytes().await?)
     }
 }
 
-macro_rules! impl_from_str {
+#[macro_export]
+macro_rules! impl_for_from_str {
     ($ty:ty) => {
-        #[async_trait]
-        impl FromSingleMultipartField for $ty {
-            async fn from_single_multipart_field(field: Field<'_>) -> Result<Self> {
-                let string = String::from_single_multipart_field(field).await?;
-                string.parse::<$ty>().map_err(|err| Error::Custom {
+        #[$crate::__private::async_trait::async_trait]
+        impl $crate::fields::FromSingleMultipartField for $ty {
+            async fn from_single_multipart_field(field: $crate::__private::multer::Field<'_>, extensions: &$crate::__private::http::Extensions) -> $crate::error::Result<Self> {
+                let string = <String as $crate::fields::FromSingleMultipartField>::from_single_multipart_field(field, extensions).await?;
+                string.parse::<$ty>().map_err(|err| $crate::error::Error::Custom {
                     target: stringify!($ty),
                     error: err.to_string(),
                 })
@@ -33,19 +40,23 @@ macro_rules! impl_from_str {
         }
     };
     ($($ty:ty),+ $(,)?) => {
-        $(impl_from_str!($ty);)+
+        $(impl_for_from_str!($ty);)+
     }
 }
 
-impl_from_str![u8, u16, u32, u64, usize, i8, i16, i32, i64, isize, f32, f64, bool,];
+impl_for_from_str![u8, u16, u32, u64, usize, i8, i16, i32, i64, isize, f32, f64, bool,];
 
 #[async_trait]
 impl<T: FromSingleMultipartField> FromMultipartField for Option<T> {
-    async fn from_multipart_field(fields: &mut Fields<'_, '_>, field_name: &str) -> Result<Self> {
+    async fn from_multipart_field(
+        fields: &mut Fields<'_, '_>,
+        field_name: &str,
+        extensions: &http::Extensions,
+    ) -> Result<Self> {
         let peeked = fields.peek().await?.ok_or(Error::UnexpectedEnd)?;
         if peeked.name() == Some(field_name) {
             Ok(Some(
-                T::from_single_multipart_field(fields.next().await?.unwrap()).await?,
+                T::from_single_multipart_field(fields.next().await?.unwrap(), extensions).await?,
             ))
         } else {
             Ok(None)
@@ -53,16 +64,34 @@ impl<T: FromSingleMultipartField> FromMultipartField for Option<T> {
     }
 }
 
-#[async_trait]
-impl<T: FromSingleMultipartField + Send> FromMultipartField for Vec<T> {
-    async fn from_multipart_field(fields: &mut Fields<'_, '_>, field_name: &str) -> Result<Self> {
-        let mut ret = Vec::new();
-        while let Some(peeked) = fields.peek().await? {
-            if peeked.name() != Some(field_name) {
-                break;
+#[macro_export]
+macro_rules! impl_for_default_plus_extend {
+    ($ty:ty) => {
+        #[async_trait]
+        impl<T: $crate::fields::FromSingleMultipartField + Send> $crate::fields::FromMultipartField for $ty where $ty: Default + Extend<T> {
+            async fn from_multipart_field(
+                fields: &mut $crate::fields::Fields<'_, '_>,
+                field_name: &str,
+                extensions: &$crate::__private::http::Extensions,
+            ) -> Result<Self> {
+                let mut ret = <$ty>::default();
+                while let Some(peeked) = fields.peek().await? {
+                    if peeked.name() != Some(field_name) {
+                        break;
+                    }
+                    ret.extend([T::from_single_multipart_field(fields.next().await?.unwrap(), extensions).await?]);
+                }
+                Ok(ret)
             }
-            ret.push(T::from_single_multipart_field(fields.next().await?.unwrap()).await?);
         }
-        Ok(ret)
+    };
+    ($($ty:ty),+ $(,)?) => {
+        $(impl_for_default_plus_extend!($ty);)+
     }
 }
+
+impl_for_default_plus_extend!(
+    Vec<T>,
+    std::collections::HashSet<T>,
+    std::collections::BTreeSet<T>
+);

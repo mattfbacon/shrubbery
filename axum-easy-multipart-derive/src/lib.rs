@@ -33,9 +33,9 @@ fn derive(input: DeriveInput) -> TokenStream {
     .unwrap_or_else(Error::into_compile_error);
 
     quote! {
-        #[::async_trait::async_trait]
+        #[::axum_easy_multipart::__private::async_trait::async_trait]
         impl #impl_generics ::axum_easy_multipart::FromMultipart for #name #ty_generics #where_clause {
-            async fn from_multipart(multipart: &mut ::axum_easy_multipart::exports::multer::Multipart<'_>) -> ::axum_easy_multipart::Result<Self> {
+            async fn from_multipart(multipart: &mut ::axum_easy_multipart::__private::multer::Multipart<'_>, extensions: &::axum_easy_multipart::__private::http::Extensions) -> ::axum_easy_multipart::Result<Self> {
                 #[allow(unused_variables, unused_mut)]
                 let mut fields = ::axum_easy_multipart::fields::Fields::new(multipart);
                 #implementation
@@ -63,7 +63,7 @@ fn derive_named_struct(input: FieldsNamed, ident: TokenStream) -> Result<TokenSt
             let actual_ident = field.ident.as_ref().unwrap();
             let multipart_name = attribute::get_rename(&field.attrs)?.unwrap_or_else(|| LitStr::new(&actual_ident.to_string(), Span::call_site()));
             let internal_ident = make_internal_ident(actual_ident);
-            let field_getter = quote! { let #internal_ident = ::axum_easy_multipart::fields::FromMultipartField::from_multipart_field(&mut fields, #multipart_name).await?; };
+            let field_getter = quote! { let #internal_ident = ::axum_easy_multipart::fields::FromMultipartField::from_multipart_field(&mut fields, #multipart_name, extensions).await?; };
             let constructor_field = quote!{ #actual_ident: #internal_ident };
             Ok((field_getter, constructor_field))
         }).collect::<Result<Vec<_>>>()?;

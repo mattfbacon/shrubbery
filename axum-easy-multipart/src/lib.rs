@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use multer::Multipart;
 
 pub mod error;
+pub mod extractor;
 pub mod fields;
 #[cfg(feature = "file")]
 pub mod file;
@@ -14,14 +15,19 @@ mod impls;
 mod test;
 
 pub use error::{Error, Result};
+pub use extractor::Extractor;
 
 #[async_trait]
 pub trait FromMultipart: Sized {
-    async fn from_multipart(multipart: &mut Multipart<'_>) -> Result<Self>;
+    async fn from_multipart(
+        multipart: &mut Multipart<'_>,
+        extensions: &http::Extensions,
+    ) -> Result<Self>;
 }
 
 pub use axum_easy_multipart_derive::FromMultipart;
 
-pub mod exports {
-    pub use multer;
+#[doc(hidden)]
+pub mod __private {
+    pub use {async_trait, http, multer};
 }
