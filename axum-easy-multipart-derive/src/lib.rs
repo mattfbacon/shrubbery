@@ -24,7 +24,7 @@ fn derive(input: DeriveInput) -> TokenStream {
 
     let implementation = match input.data {
         Data::Struct(data) => derive_struct(input_span, data.fields, quote!(Self)),
-        Data::Enum(data) => derive_enum(input_span, &name, input.attrs, data),
+        Data::Enum(data) => derive_enum(&name, input.attrs, data),
         Data::Union(_data) => Err(Error::new(
             input_span,
             "FromMultipart can only be derived on structs and enums",
@@ -75,13 +75,8 @@ fn derive_named_struct(input: FieldsNamed, ident: TokenStream) -> Result<TokenSt
     })
 }
 
-fn derive_enum(
-    span: Span,
-    name: &Ident,
-    attributes: Vec<Attribute>,
-    input: DataEnum,
-) -> Result<TokenStream> {
-    let tag_field = attribute::get_enum_tag(span, &attributes)?;
+fn derive_enum(name: &Ident, attributes: Vec<Attribute>, input: DataEnum) -> Result<TokenStream> {
+    let tag_field = attribute::get_enum_tag(input.enum_token.span(), &attributes)?;
 
     let name = name.to_string();
     let mut variant_set = std::collections::HashSet::new();
