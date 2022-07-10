@@ -1,5 +1,4 @@
-use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use axum::response::{ErrorResponse, IntoResponse, Redirect, Response};
@@ -29,7 +28,7 @@ impl Action {
 	}
 }
 
-type TagsByCategory = HashMap<Option<String>, Vec<(models::TagId, String, bool)>>;
+type TagsByCategory = BTreeMap<Option<String>, Vec<(models::TagId, String, bool)>>;
 
 #[derive(askama::Template)]
 #[template(path = "files/page.html")]
@@ -48,7 +47,7 @@ impl Template {
 	) -> sqlx::Result<TagsByCategory> {
 		use futures::TryStreamExt as _;
 
-		let mut ret: TagsByCategory = HashMap::new();
+		let mut ret: TagsByCategory = BTreeMap::new();
 		let mut stream = sqlx::query!(r#"SELECT tags.id, tags.name, tag_categories.name as "category?", (SELECT count(*) > 0 FROM file_tags WHERE tag = tags.id AND file = $1) as "present!" FROM tags LEFT JOIN tag_categories ON tags.category = tag_categories.id ORDER BY category NULLS FIRST, name"#, file_id).fetch(database);
 		while let Some(record) = stream.try_next().await? {
 			let tags = ret.entry(record.category).or_insert(Vec::new());
