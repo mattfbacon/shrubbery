@@ -38,6 +38,10 @@ pub struct Io(pub &'static str, #[source] pub std::io::Error);
 pub struct BadRequest(pub Cow<'static, str>);
 
 #[derive(Debug, thiserror::Error)]
+#[error("invalid or missing content type")]
+pub struct BadContentType;
+
+#[derive(Debug, thiserror::Error)]
 #[error("wrong field order (expected {0:?} field)")]
 pub struct WrongFieldOrder(pub &'static str);
 
@@ -65,6 +69,7 @@ impl_response!(Encrypt, INTERNAL_SERVER_ERROR);
 impl_response!(Decrypt, INTERNAL_SERVER_ERROR);
 impl_response!(Multipart, BAD_REQUEST);
 impl_response!(BadRequest, BAD_REQUEST);
+impl_response!(BadContentType, BAD_REQUEST);
 impl_response!(WrongFieldOrder, BAD_REQUEST);
 impl_response!(ExpectedField, BAD_REQUEST);
 

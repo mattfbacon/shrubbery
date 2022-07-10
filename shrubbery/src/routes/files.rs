@@ -9,7 +9,7 @@ use crate::config::Config;
 use crate::database::models::media_type::MediaType as FileMediaType;
 use crate::database::{models, Database};
 use crate::error;
-use crate::helpers::{auth, multipart};
+use crate::helpers::auth;
 
 #[derive(Clone, Copy)]
 enum Action {
@@ -105,103 +105,70 @@ pub async fn get_handler(
 	}
 }
 
+pub struct MakeTempfile(Arc<Config>);
+
+impl axum_easy_multipart::file::MakeTempfile for MakeTempfile {
+	fn extract_from_extensions(extensions: &http::Extensions) -> Self {
+		Self(Arc::clone(extensions.get::<Arc<Config>>().unwrap()))
+	}
+
+	fn tempfile(&self) -> std::io::Result<tempfile::NamedTempFile> {
+		tempfile::Builder::new().tempfile_in(&self.0.file_storage)
+	}
+}
+
+#[derive(Debug, axum_easy_multipart::FromMultipart)]
+#[multipart(tag = "action")]
+pub enum PostRequest {
+	#[multipart(rename = "delete")]
+	Delete {},
+	#[multipart(rename = "replace")]
+	Replace {
+		file: axum_easy_multipart::file::File<MakeTempfile>,
+	},
+	#[multipart(rename = "update")]
+	Update {
+		name: String,
+		description: Option<String>,
+		media_type: models::MediaType,
+	},
+	#[multipart(rename = "update_tags")]
+	UpdateTags { tags: Vec<models::TagId> },
+}
+
 pub async fn post_handler(
 	auth::Auth(self_user): auth::Auth,
 	extract::Path((file_id,)): extract::Path<(models::FileId,)>,
-	mut multipart: extract::Multipart,
+	axum_easy_multipart::Extractor(req): axum_easy_multipart::Extractor<PostRequest>,
 	extract::Extension(config): extract::Extension<Arc<Config>>,
 	extract::Extension(database): extract::Extension<Arc<Database>>,
 ) -> Result<Response, ErrorResponse> {
 	let database = &*database;
-	let action = match multipart.next_field().await.map_err(error::Multipart)? {
-		Some(action) if action.name() == Some("action") => {
-			action.text().await.map_err(error::Multipart)?
-		}
-		Some(_) => return Err(error::WrongFieldOrder("action").into()),
-		None => return Err(error::ExpectedField("action").into()),
-	};
 
-	match action.as_str() {
-		"update" => {
-			#[derive(serde::Deserialize)]
-			pub struct UpdateReq {
-				name: String,
-				description: Option<String>,
-				media_type: models::MediaType,
-			}
-
-			let mut req: UpdateReq = multipart::deserialize_from_multipart(&mut multipart).await?;
-			crate::helpers::set_none_if_empty(&mut req.description);
-			let file = sqlx::query_as!(
-				models::File,
-				r#"UPDATE files SET name = $2, description = $3, media_type = $4 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
-				file_id,
-				req.name,
-				req.description,
-				req.media_type as _
-			)
-			.fetch_optional(database)
-			.await.map_err(error::Sqlx)?.ok_or(error::EntityNotFound("file"))?;
-			Ok(
-				Template {
-					self_user,
-					file,
-					action: Some(Action::Updated),
-					tags_by_category: Template::get_tags_by_category(database, file_id)
-						.await
-						.map_err(error::Sqlx)?,
-				}
-				.into_response(),
-			)
-		}
-		"update-tags" => {
-			let file = models::File::by_id(database, file_id)
+	match req {
+		PostRequest::Delete {} => {
+			tokio::fs::remove_file(config.file_storage.join(file_id.to_string()))
 				.await
-				.map_err(error::Sqlx)?
-				.ok_or(error::EntityNotFound("file"))?;
-
-			let mut new_tags = Vec::new();
-			while let Some(field) = multipart.next_field().await.map_err(error::Multipart)? {
-				if field.name() != Some("tags") {
-					return Err(error::WrongFieldOrder("tags").into());
-				}
-				let tag_id_str = field.text().await.map_err(error::Multipart)?;
-				let tag_id = tag_id_str
-					.parse()
-					.map_err(|_| error::BadRequest(Cow::Borrowed("tag ID is not valid number")))?;
-				new_tags.push(tag_id);
-			}
-
-			let mut transaction = database.begin().await.map_err(error::Sqlx)?;
-			sqlx::query!("DELETE FROM file_tags WHERE file = $1", file_id)
-				.execute(&mut transaction)
+				.map_err(|err| error::Io("deleting file", err))?;
+			let q_result = sqlx::query!("DELETE FROM files WHERE id = $1", file_id)
+				.execute(database)
 				.await
 				.map_err(error::Sqlx)?;
-			sqlx::query!(
-				"INSERT INTO file_tags (file, tag) (SELECT $1 as file, unnest as tag FROM unnest(cast($2 as bigint[])))",
-				file_id,
-				&new_tags
-			)
-			.execute(&mut transaction)
-			.await
-			.map_err(error::Sqlx)?;
-			transaction.commit().await.map_err(error::Sqlx)?;
-
-			Ok(
-				Template {
-					self_user,
-					file,
-					action: Some(Action::UpdatedTags),
-					tags_by_category: Template::get_tags_by_category(database, file_id)
-						.await
-						.map_err(error::Sqlx)?,
-				}
-				.into_response(),
-			)
+			if q_result.rows_affected() == 0 {
+				Err(error::EntityNotFound("file").into())
+			} else {
+				Ok(Redirect::to("/").into_response())
+			}
 		}
-		"replace" => {
-			let (media_type, write_state) = multipart::WriteToFile::start(&mut multipart, "file").await?;
-			write_state.replace(file_id, &config).await?;
+		PostRequest::Replace { file: temp_file } => {
+			temp_file
+				.temp_path
+				.persist(config.file_storage.join(format!("{file_id}")))
+				.map_err(|error| error::Io("replacing file in filesystem", error.error))?;
+			let media_type = temp_file
+				.content_type
+				.and_then(models::MediaType::from_mime)
+				.ok_or(error::BadContentType)?;
 			let file = sqlx::query_as!(
 				models::File,
 				r#"UPDATE files SET media_type = $2 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
@@ -226,21 +193,68 @@ pub async fn post_handler(
 				.into_response(),
 			)
 		}
-		"delete" => {
-			tokio::fs::remove_file(config.file_storage.join(file_id.to_string()))
+		PostRequest::Update {
+			name,
+			mut description,
+			media_type,
+		} => {
+			crate::helpers::set_none_if_empty(&mut description);
+			let file = sqlx::query_as!(
+				models::File,
+				r#"UPDATE files SET name = $2, description = $3, media_type = $4 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
+				file_id,
+				name,
+				description,
+				media_type as _
+			)
+			.fetch_optional(database)
+			.await.map_err(error::Sqlx)?.ok_or(error::EntityNotFound("file"))?;
+			Ok(
+				Template {
+					self_user,
+					file,
+					action: Some(Action::Updated),
+					tags_by_category: Template::get_tags_by_category(database, file_id)
+						.await
+						.map_err(error::Sqlx)?,
+				}
+				.into_response(),
+			)
+		}
+		PostRequest::UpdateTags { tags } => {
+			// get it now to return early if it doesn't exist
+			let file = models::File::by_id(database, file_id)
 				.await
-				.map_err(|err| error::Io("deleting file", err))?;
-			let q_result = sqlx::query!("DELETE FROM files WHERE id = $1", file_id)
-				.execute(database)
+				.map_err(error::Sqlx)?
+				.ok_or(error::EntityNotFound("file"))?;
+
+			let mut transaction = database.begin().await.map_err(error::Sqlx)?;
+			sqlx::query!("DELETE FROM file_tags WHERE file = $1", file_id)
+				.execute(&mut transaction)
 				.await
 				.map_err(error::Sqlx)?;
-			if q_result.rows_affected() == 0 {
-				Err(error::EntityNotFound("file").into())
-			} else {
-				Ok(Redirect::to("/").into_response())
-			}
+			sqlx::query!(
+				"INSERT INTO file_tags (file, tag) (SELECT $1 as file, unnest as tag FROM unnest(cast($2 as int[])))",
+				file_id,
+				&tags
+			)
+			.execute(&mut transaction)
+			.await
+			.map_err(error::Sqlx)?;
+			transaction.commit().await.map_err(error::Sqlx)?;
+
+			Ok(
+				Template {
+					self_user,
+					file,
+					action: Some(Action::UpdatedTags),
+					tags_by_category: Template::get_tags_by_category(database, file_id)
+						.await
+						.map_err(error::Sqlx)?,
+				}
+				.into_response(),
+			)
 		}
-		_ => Err(error::BadRequest(Cow::Borrowed("unknown action")).into()),
 	}
 }
 

@@ -202,6 +202,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-easy-multipart"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum-core",
+ "axum-easy-multipart-derive",
+ "bytes",
+ "futures-core",
+ "http",
+ "http-body",
+ "mime",
+ "multer",
+ "pin-project-lite",
+ "tempfile",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "axum-easy-multipart-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -450,6 +478,15 @@ name = "event-listener"
 version = "2.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77f3309417938f28bf8228fcff79a4a37103981e3e186d2ccd19c74b38f4eb71"
+
+[[package]]
+name = "fastrand"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3fcf0cee53519c866c09b5de1f6c56ff9d647101f81c1964fa632e148896cdf"
+dependencies = [
+ "instant",
+]
 
 [[package]]
 name = "figment"
@@ -1266,6 +1303,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "remove_dir_all"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
+dependencies = [
+ "winapi",
+]
+
+[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1389,6 +1435,7 @@ dependencies = [
  "askama",
  "askama_escape",
  "axum",
+ "axum-easy-multipart",
  "base64",
  "bincode",
  "bindable",
@@ -1401,6 +1448,7 @@ dependencies = [
  "http-body",
  "hyper",
  "log",
+ "mime",
  "nom",
  "ormx",
  "percent-encoding",
@@ -1409,6 +1457,7 @@ dependencies = [
  "simple_logger",
  "smartstring",
  "sqlx",
+ "tempfile",
  "thiserror",
  "tokio",
  "tower",
@@ -1615,6 +1664,20 @@ name = "sync_wrapper"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20518fe4a4c9acf048008599e464deb21beeae3d3578418951a189c235a7a9a8"
+
+[[package]]
+name = "tempfile"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cdb1ef4eaeeaddc8fbd371e5017057064af0911902ef36b39801f67cc6d79e4"
+dependencies = [
+ "cfg-if",
+ "fastrand",
+ "libc",
+ "redox_syscall",
+ "remove_dir_all",
+ "winapi",
+]
 
 [[package]]
 name = "thiserror"

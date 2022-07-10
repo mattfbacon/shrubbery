@@ -9,6 +9,24 @@ pub enum MediaType {
 	Video,
 }
 
+#[derive(Debug, thiserror::Error)]
+#[error("invalid media type; expected `image` or `video`")]
+pub struct FromStrError;
+
+impl std::str::FromStr for MediaType {
+	type Err = FromStrError;
+
+	fn from_str(raw: &str) -> Result<Self, Self::Err> {
+		match raw {
+			"image" | "Image" => Ok(Self::Image),
+			"video" | "Video" => Ok(Self::Video),
+			_ => Err(FromStrError),
+		}
+	}
+}
+
+axum_easy_multipart::impl_for_from_str!(MediaType);
+
 impl Display for MediaType {
 	fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
 		use MediaType::*;
@@ -43,5 +61,13 @@ impl MediaType {
 		}
 
 		Helper(value)
+	}
+
+	pub fn from_mime(mime: mime::Mime) -> Option<Self> {
+		match mime.type_() {
+			mime::IMAGE => Some(Self::Image),
+			mime::VIDEO => Some(Self::Video),
+			_ => None,
+		}
 	}
 }

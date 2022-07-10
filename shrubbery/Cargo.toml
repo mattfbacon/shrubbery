@@ -60,9 +60,12 @@ hyper = "0.14"
 tower-http = { version = "0.3", features = ["fs"] }
 
 # misc
+axum-easy-multipart = { path = "../axum-easy-multipart" }
 bindable = "^0.1.2"
 chrono = { version = "0.4", features = ["serde"] }
 figment = { version = "0.10", features = ["env", "toml"] }
+mime = "0.3"
 rand = "0.8"
 smartstring = "1"
+tempfile = "3"
 thiserror = "1"
