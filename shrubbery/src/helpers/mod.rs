@@ -2,6 +2,7 @@ pub mod auth;
 pub mod cookie;
 pub mod or_null;
 pub mod pagination;
+pub mod percent;
 
 pub use or_null::OrNull;
 

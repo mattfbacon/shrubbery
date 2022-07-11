@@ -11,7 +11,7 @@ struct Bindings<'a> {
 impl<'a> Bindings<'a> {
 	pub fn new(starting_value: usize) -> Self {
 		Self {
-			bindings: Default::default(),
+			bindings: Vec::default(),
 			starting_value,
 		}
 	}

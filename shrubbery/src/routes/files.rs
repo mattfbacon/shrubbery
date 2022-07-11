@@ -135,6 +135,138 @@ pub enum PostRequest {
 	UpdateTags { tags: Vec<models::TagId> },
 }
 
+async fn post_delete_handler(
+	file_id: models::FileId,
+	config: &Config,
+	database: &sqlx::Pool<sqlx::Postgres>,
+) -> Result<Response, ErrorResponse> {
+	tokio::fs::remove_file(config.file_storage.join(file_id.to_string()))
+		.await
+		.map_err(|err| error::Io("deleting file", err))?;
+	let q_result = sqlx::query!("DELETE FROM files WHERE id = $1", file_id)
+		.execute(database)
+		.await
+		.map_err(error::Sqlx)?;
+	if q_result.rows_affected() == 0 {
+		Err(error::EntityNotFound("file").into())
+	} else {
+		Ok(Redirect::to("/").into_response())
+	}
+}
+
+async fn post_replace_handler(
+	self_user: models::User,
+	file_id: models::FileId,
+	temp_file: axum_easy_multipart::file::File<impl axum_easy_multipart::file::MakeTempfile>,
+	config: &Config,
+	database: &sqlx::Pool<sqlx::Postgres>,
+) -> Result<Response, ErrorResponse> {
+	temp_file
+		.temp_path
+		.persist(config.file_storage.join(format!("{file_id}")))
+		.map_err(|error| error::Io("replacing file in filesystem", error.error))?;
+	let media_type = temp_file
+		.content_type
+		.as_ref()
+		.and_then(models::MediaType::from_mime)
+		.ok_or(error::BadContentType)?;
+	let file = sqlx::query_as!(
+		models::File,
+		r#"UPDATE files SET media_type = $2 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
+		file_id,
+		media_type as _,
+	)
+		.fetch_optional(database)
+		.await
+		.map_err(error::Sqlx)?.ok_or_else(|| {
+			tracing::warn!("file with ID {file_id} existed in filesystem but not in database");
+			error::EntityNotFound("file")
+		})?;
+	Ok(
+		Template {
+			self_user,
+			file,
+			action: Some(Action::Replaced),
+			tags_by_category: Template::get_tags_by_category(database, file_id)
+				.await
+				.map_err(error::Sqlx)?,
+		}
+		.into_response(),
+	)
+}
+
+async fn post_update_handler(
+	self_user: models::User,
+	file_id: models::FileId,
+	name: String,
+	mut description: Option<String>,
+	media_type: models::MediaType,
+	database: &sqlx::Pool<sqlx::Postgres>,
+) -> Result<Response, ErrorResponse> {
+	crate::helpers::set_none_if_empty(&mut description);
+	let file = sqlx::query_as!(
+		models::File,
+		r#"UPDATE files SET name = $2, description = $3, media_type = $4 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
+		file_id,
+		name,
+		description,
+		media_type as _
+	)
+	.fetch_optional(database)
+	.await.map_err(error::Sqlx)?.ok_or(error::EntityNotFound("file"))?;
+	Ok(
+		Template {
+			self_user,
+			file,
+			action: Some(Action::Updated),
+			tags_by_category: Template::get_tags_by_category(database, file_id)
+				.await
+				.map_err(error::Sqlx)?,
+		}
+		.into_response(),
+	)
+}
+
+async fn post_update_tags_handler(
+	self_user: models::User,
+	file_id: models::FileId,
+	tags: Vec<models::TagId>,
+	database: &sqlx::Pool<sqlx::Postgres>,
+) -> Result<Response, ErrorResponse> {
+	// get it now to return early if it doesn't exist
+	let file = models::File::by_id(database, file_id)
+		.await
+		.map_err(error::Sqlx)?
+		.ok_or(error::EntityNotFound("file"))?;
+
+	let mut transaction = database.begin().await.map_err(error::Sqlx)?;
+	sqlx::query!("DELETE FROM file_tags WHERE file = $1", file_id)
+		.execute(&mut transaction)
+		.await
+		.map_err(error::Sqlx)?;
+	sqlx::query!(
+		"INSERT INTO file_tags (file, tag) (SELECT $1 as file, unnest as tag FROM unnest(cast($2 as int[])))",
+		file_id,
+		&tags
+	)
+	.execute(&mut transaction)
+	.await
+	.map_err(error::Sqlx)?;
+	transaction.commit().await.map_err(error::Sqlx)?;
+
+	Ok(
+		Template {
+			self_user,
+			file,
+			action: Some(Action::UpdatedTags),
+			tags_by_category: Template::get_tags_by_category(database, file_id)
+				.await
+				.map_err(error::Sqlx)?,
+		}
+		.into_response(),
+	)
+}
+
 pub async fn post_handler(
 	auth::Auth(self_user): auth::Auth,
 	extract::Path((file_id,)): extract::Path<(models::FileId,)>,
@@ -145,114 +277,17 @@ pub async fn post_handler(
 	let database = &*database;
 
 	match req {
-		PostRequest::Delete {} => {
-			tokio::fs::remove_file(config.file_storage.join(file_id.to_string()))
-				.await
-				.map_err(|err| error::Io("deleting file", err))?;
-			let q_result = sqlx::query!("DELETE FROM files WHERE id = $1", file_id)
-				.execute(database)
-				.await
-				.map_err(error::Sqlx)?;
-			if q_result.rows_affected() == 0 {
-				Err(error::EntityNotFound("file").into())
-			} else {
-				Ok(Redirect::to("/").into_response())
-			}
-		}
+		PostRequest::Delete {} => post_delete_handler(file_id, &config, database).await,
 		PostRequest::Replace { file: temp_file } => {
-			temp_file
-				.temp_path
-				.persist(config.file_storage.join(format!("{file_id}")))
-				.map_err(|error| error::Io("replacing file in filesystem", error.error))?;
-			let media_type = temp_file
-				.content_type
-				.and_then(models::MediaType::from_mime)
-				.ok_or(error::BadContentType)?;
-			let file = sqlx::query_as!(
-				models::File,
-				r#"UPDATE files SET media_type = $2 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
-				file_id,
-				media_type as _,
-			)
-			.fetch_optional(database)
-			.await
-			.map_err(error::Sqlx)?.ok_or_else(|| {
-				tracing::warn!("file with ID {file_id} existed in filesystem but not in database");
-				error::EntityNotFound("file")
-			})?;
-			Ok(
-				Template {
-					self_user,
-					file,
-					action: Some(Action::Replaced),
-					tags_by_category: Template::get_tags_by_category(database, file_id)
-						.await
-						.map_err(error::Sqlx)?,
-				}
-				.into_response(),
-			)
+			post_replace_handler(self_user, file_id, temp_file, &config, database).await
 		}
 		PostRequest::Update {
 			name,
-			mut description,
+			description,
 			media_type,
-		} => {
-			crate::helpers::set_none_if_empty(&mut description);
-			let file = sqlx::query_as!(
-				models::File,
-				r#"UPDATE files SET name = $2, description = $3, media_type = $4 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
-				file_id,
-				name,
-				description,
-				media_type as _
-			)
-			.fetch_optional(database)
-			.await.map_err(error::Sqlx)?.ok_or(error::EntityNotFound("file"))?;
-			Ok(
-				Template {
-					self_user,
-					file,
-					action: Some(Action::Updated),
-					tags_by_category: Template::get_tags_by_category(database, file_id)
-						.await
-						.map_err(error::Sqlx)?,
-				}
-				.into_response(),
-			)
-		}
+		} => post_update_handler(self_user, file_id, name, description, media_type, database).await,
 		PostRequest::UpdateTags { tags } => {
-			// get it now to return early if it doesn't exist
-			let file = models::File::by_id(database, file_id)
-				.await
-				.map_err(error::Sqlx)?
-				.ok_or(error::EntityNotFound("file"))?;
-
-			let mut transaction = database.begin().await.map_err(error::Sqlx)?;
-			sqlx::query!("DELETE FROM file_tags WHERE file = $1", file_id)
-				.execute(&mut transaction)
-				.await
-				.map_err(error::Sqlx)?;
-			sqlx::query!(
-				"INSERT INTO file_tags (file, tag) (SELECT $1 as file, unnest as tag FROM unnest(cast($2 as int[])))",
-				file_id,
-				&tags
-			)
-			.execute(&mut transaction)
-			.await
-			.map_err(error::Sqlx)?;
-			transaction.commit().await.map_err(error::Sqlx)?;
-
-			Ok(
-				Template {
-					self_user,
-					file,
-					action: Some(Action::UpdatedTags),
-					tags_by_category: Template::get_tags_by_category(database, file_id)
-						.await
-						.map_err(error::Sqlx)?,
-				}
-				.into_response(),
-			)
+			post_update_tags_handler(self_user, file_id, tags, database).await
 		}
 	}
 }

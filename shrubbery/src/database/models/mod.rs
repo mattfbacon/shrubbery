@@ -14,11 +14,11 @@ pub mod tag;
 pub mod tag_category;
 pub mod user;
 
-pub use file::{File, FileId};
-pub use file_tag::{FileTag, FileTagId};
-pub use tag::{Tag, TagId};
-pub use tag_category::{TagCategory, TagCategoryId};
-pub use user::{User, UserId};
+pub use file::{File, Id as FileId};
+pub use file_tag::{FileTag, Id as FileTagId};
+pub use tag::{Id as TagId, Tag};
+pub use tag_category::{Id as TagCategoryId, TagCategory};
+pub use user::{Id as UserId, User};
 
 type Id = i32;
 type BigId = i64;

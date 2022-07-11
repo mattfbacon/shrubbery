@@ -1,15 +1,15 @@
 use ormx::Table;
 
-use super::{Id, UserPassword, UserRole};
+use super::{UserPassword, UserRole};
 use crate::timestamp::Timestamp;
 
-pub type UserId = Id;
+pub type Id = super::Id;
 
 #[derive(Table)]
 #[ormx(table = "users", insertable = Create, deletable)]
 pub struct User {
-	#[ormx(get_optional = by_id(UserId))]
-	pub id: UserId,
+	#[ormx(get_optional = by_id(Id))]
+	pub id: Id,
 	#[ormx(get_optional = by_username(&str), set)]
 	pub username: String,
 	#[ormx(custom_type, by_ref, set, set_as_wildcard)]

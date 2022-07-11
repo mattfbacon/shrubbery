@@ -46,7 +46,7 @@ pub async fn get_handler(
 }
 
 #[derive(Debug, serde::Deserialize)]
-pub struct EditRequest {
+pub struct PostRequest {
 	name: String,
 	description: Option<String>,
 	color: models::Color,
@@ -55,7 +55,7 @@ pub struct EditRequest {
 pub async fn post_handler(
 	auth::Admin(self_user): auth::Admin,
 	extract::Path((tag_category_id,)): extract::Path<(models::TagCategoryId,)>,
-	extract::Form(mut request): extract::Form<EditRequest>,
+	extract::Form(mut request): extract::Form<PostRequest>,
 	extract::Extension(database): extract::Extension<Arc<Database>>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
 	let database = &*database;

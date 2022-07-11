@@ -12,14 +12,13 @@ pub enum UserRole {
 
 impl Display for UserRole {
 	fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-		use UserRole::*;
 		formatter.write_str(match (self, formatter.alternate()) {
-			(Viewer, true) => "Viewer",
-			(Viewer, false) => "viewer",
-			(Editor, true) => "Editor",
-			(Editor, false) => "editor",
-			(Admin, true) => "Admin",
-			(Admin, false) => "admin",
+			(Self::Viewer, true) => "Viewer",
+			(Self::Viewer, false) => "viewer",
+			(Self::Editor, true) => "Editor",
+			(Self::Editor, false) => "editor",
+			(Self::Admin, true) => "Admin",
+			(Self::Admin, false) => "admin",
 		})
 	}
 }

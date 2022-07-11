@@ -7,8 +7,8 @@ use serde::Deserialize;
 use super::login::ReturnUrl;
 use crate::database::{models, Database};
 use crate::error;
+use crate::helpers::percent::EncodedString as PercentEncodedString;
 use crate::helpers::set_none_if_empty;
-use crate::percent::PercentEncodedString;
 
 #[derive(askama::Template)]
 #[template(path = "register.html")]
@@ -28,7 +28,7 @@ pub async fn get_handler(
 }
 
 #[derive(Debug, Deserialize)]
-pub struct RegisterRequest {
+pub struct PostRequest {
 	username: String,
 	password: String,
 	confirm_password: String,
@@ -36,7 +36,7 @@ pub struct RegisterRequest {
 }
 
 pub async fn post_handler(
-	extract::Form(mut request): extract::Form<RegisterRequest>,
+	extract::Form(mut request): extract::Form<PostRequest>,
 	extract::Query(ReturnUrl { return_url }): extract::Query<ReturnUrl>,
 	extract::Extension(database): extract::Extension<Arc<Database>>,
 ) -> Result<Response, ErrorResponse> {

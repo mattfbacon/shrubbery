@@ -22,21 +22,22 @@ pub fn display_category_options(
 		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 			#[inline]
 			fn selected(is_selected: bool) -> &'static str {
-				match is_selected {
-					true => "selected",
-					false => "",
+				if is_selected {
+					" selected"
+				} else {
+					""
 				}
 			}
 
 			write!(
 				f,
-				r#"<option value="null" {}>(none)</option>"#,
+				r#"<option value="null"{}>(none)</option>"#,
 				selected(self.current.is_none())
 			)?;
 			for &(category_id, ref category_name) in self.categories {
 				write!(
 					f,
-					r#"<option value="{}" {}>{}</option>"#,
+					r#"<option value="{}"{}>{}</option>"#,
 					category_id,
 					selected(self.current == Some(category_id)),
 					askama::filters::escape(askama_escape::Html, &category_name).unwrap() // always Ok

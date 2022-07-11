@@ -18,9 +18,9 @@ impl Color {
 		format!("#{:02x}{:02x}{:02x}", self.red, self.green, self.blue)
 	}
 
-	pub fn from_hex(hex: &str) -> Result<Self, ColorFromHexError> {
+	pub fn from_hex(hex: &str) -> Result<Self, FromHexError> {
 		if hex.len() != 7 || hex.as_bytes()[0] != b'#' {
-			return Err(ColorFromHexError::Format);
+			return Err(FromHexError::Format);
 		}
 		Ok(Self {
 			red: u8::from_str_radix(&hex[1..3], 16)?,
@@ -31,7 +31,7 @@ impl Color {
 }
 
 #[derive(Debug, Error)]
-pub enum ColorFromHexError {
+pub enum FromHexError {
 	#[error("string should be in format `#abcdef`")]
 	Format,
 	#[error("bad hex integer: {0}")]
@@ -70,7 +70,7 @@ impl<'r> Decode<'r, Postgres> for Color {
 }
 
 impl FromStr for Color {
-	type Err = ColorFromHexError;
+	type Err = FromHexError;
 	fn from_str(hex: &str) -> Result<Self, Self::Err> {
 		Self::from_hex(hex)
 	}

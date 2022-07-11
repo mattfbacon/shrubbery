@@ -8,7 +8,7 @@ use headers::HeaderMapExt as _;
 use http::StatusCode;
 
 use crate::database::models::{self, User};
-use crate::helpers::cookie::CookiePart;
+use crate::helpers::cookie::Part as CookiePart;
 
 pub struct Auth(pub User);
 
@@ -25,7 +25,7 @@ impl Auth {
 		let token = req
 			.headers()
 			.typed_get::<headers::Cookie>()
-			.and_then(|cookies| cookies.get("token").map(|token| token.to_owned()));
+			.and_then(|cookies| cookies.get("token").map(str::to_owned));
 		let database = Arc::clone(
 			req
 				.extensions()
@@ -52,29 +52,29 @@ impl Auth {
 			database,
 			config,
 		}: Params,
-	) -> Result<Self, AuthError> {
+	) -> Result<Self> {
 		let token = match token {
 			Some(token) => token,
-			None => return Err(AuthError::NoToken { redirect_to: uri }),
+			None => return Err(Error::NoToken { redirect_to: uri }),
 		};
 		let token = crate::token::Token::decrypt(&token, &config.cookie_signing_key)
-			.map_err(|_| AuthError::Invalid)?;
+			.map_err(|_| Error::Invalid)?;
 		let token = match token {
 			Some(token) => token,
-			None => return Err(AuthError::Expired { redirect_to: uri }),
+			None => return Err(Error::Expired { redirect_to: uri }),
 		};
 		let user_id = token.user_id;
 		if let Some(user) = crate::database::models::User::by_id(&*database, user_id).await? {
 			Ok(Self(user))
 		} else {
 			// this user ID was issued by us but is no longer valid, which means the user was deleted.
-			Err(AuthError::UserDeleted { redirect_to: uri })
+			Err(Error::UserDeleted { redirect_to: uri })
 		}
 	}
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum AuthError {
+pub enum Error {
 	#[error("no token cookie")]
 	NoToken { redirect_to: String },
 	#[error("you do not have permission to access this page")]
@@ -90,40 +90,43 @@ pub enum AuthError {
 	Sqlx(#[from] sqlx::Error),
 }
 
-impl AuthError {
+pub type Result<T, E = Error> = core::result::Result<T, E>;
+
+impl Error {
 	fn redirect_to(&self) -> Option<&str> {
-		use AuthError::*;
 		// be exhaustive in case we add another variant
 		match self {
-			NoToken { redirect_to } | Expired { redirect_to } | UserDeleted { redirect_to } => {
-				Some(redirect_to)
-			}
-			Forbidden | Invalid | Sqlx(_) => None,
+			Self::NoToken { redirect_to }
+			| Self::Expired { redirect_to }
+			| Self::UserDeleted { redirect_to } => Some(redirect_to),
+			Self::Forbidden | Self::Invalid | Self::Sqlx(_) => None,
 		}
 	}
 
 	fn should_remove_token(&self) -> bool {
-		use AuthError::*;
 		// ditto
 		match self {
-			NoToken { .. } | Expired { .. } | UserDeleted { .. } | Invalid => true,
-			Forbidden | Sqlx(_) => false,
+			Self::NoToken { .. } | Self::Expired { .. } | Self::UserDeleted { .. } | Self::Invalid => {
+				true
+			}
+			Self::Forbidden | Self::Sqlx(_) => false,
 		}
 	}
 
 	fn status_code(&self) -> StatusCode {
-		use AuthError::*;
 		match self {
 			// redirect to /login, which will redirect back to the current page after the user logs in
-			NoToken { .. } | Expired { .. } | UserDeleted { .. } => StatusCode::SEE_OTHER,
-			Invalid => StatusCode::BAD_REQUEST,
-			Forbidden => StatusCode::FORBIDDEN,
-			Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
+			Self::NoToken { .. } | Self::Expired { .. } | Self::UserDeleted { .. } => {
+				StatusCode::SEE_OTHER
+			}
+			Self::Invalid => StatusCode::BAD_REQUEST,
+			Self::Forbidden => StatusCode::FORBIDDEN,
+			Self::Sqlx(_) => StatusCode::INTERNAL_SERVER_ERROR,
 		}
 	}
 }
 
-impl IntoResponse for AuthError {
+impl IntoResponse for Error {
 	fn into_response(self) -> Response {
 		let mut builder = Response::builder().status(self.status_code());
 
@@ -137,7 +140,7 @@ impl IntoResponse for AuthError {
 				"Location",
 				format!(
 					"/login?return={}",
-					crate::percent::percent_encode(redirect_to.as_bytes())
+					super::percent::encode(redirect_to.as_bytes())
 				),
 			);
 		}
@@ -150,7 +153,7 @@ impl IntoResponse for AuthError {
 
 #[async_trait]
 impl FromRequest<Body> for Auth {
-	type Rejection = AuthError;
+	type Rejection = Error;
 
 	async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
 		let params = Self::get_params(req);
@@ -167,13 +170,13 @@ macro_rules! role_extractor {
 
 		#[async_trait]
 		impl FromRequest<Body> for $extractor_name {
-			type Rejection = AuthError;
+			type Rejection = Error;
 
 			async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
 				let params = Auth::get_params(req);
 				let Auth(user) = Auth::extract(params).await?;
 				if user.role < models::UserRole::$min_role {
-					Err(AuthError::Forbidden)
+					Err(Error::Forbidden)
 				} else {
 					Ok(Self(user))
 				}

@@ -1,5 +1,4 @@
 use std::pin::Pin;
-use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use axum::extract::connect_info::Connected;
@@ -7,7 +6,6 @@ use axum::Router;
 use bindable::BindableAddr;
 use futures::ready;
 use hyper::server::accept::Accept;
-use tokio::net::unix::{SocketAddr, UCred};
 use tokio::net::{UnixListener, UnixStream};
 
 use super::Error;
@@ -35,20 +33,11 @@ impl Accept for UdsAccept {
 }
 
 #[derive(Clone, Debug)]
-struct UdsConnectInfo {
-	peer_addr: Arc<SocketAddr>,
-	peer_cred: UCred,
-}
+struct UdsConnectInfo;
 
 impl Connected<&UnixStream> for UdsConnectInfo {
-	fn connect_info(target: &UnixStream) -> Self {
-		let peer_addr = target.peer_addr().unwrap();
-		let peer_cred = target.peer_cred().unwrap();
-
-		Self {
-			peer_addr: Arc::new(peer_addr),
-			peer_cred,
-		}
+	fn connect_info(_target: &UnixStream) -> Self {
+		Self
 	}
 }
 

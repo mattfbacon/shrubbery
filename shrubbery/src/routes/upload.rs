@@ -38,6 +38,7 @@ async fn post_handler(
 	let media_type = req
 		.file
 		.content_type
+		.as_ref()
 		.and_then(models::MediaType::from_mime)
 		.ok_or(error::BadContentType)?;
 	let record = sqlx::query!(

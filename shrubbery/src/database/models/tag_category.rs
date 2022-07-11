@@ -1,15 +1,15 @@
 use ormx::Table;
 
-use super::{Color, Id, UserId};
+use super::{Color, UserId};
 use crate::timestamp::Timestamp;
 
-pub type TagCategoryId = Id;
+pub type Id = super::Id;
 
 #[derive(Table)]
 #[ormx(table = "tag_categories", insertable = Create, deletable)]
 pub struct TagCategory {
-	#[ormx(get_optional = by_id(TagCategoryId))]
-	pub id: TagCategoryId,
+	#[ormx(get_optional = by_id(Id))]
+	pub id: Id,
 	#[ormx(set)]
 	pub name: String,
 	#[ormx(set)]

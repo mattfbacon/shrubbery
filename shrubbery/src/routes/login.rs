@@ -7,8 +7,8 @@ use serde::Deserialize;
 use crate::config::Config;
 use crate::database::{models, Database};
 use crate::error;
-use crate::helpers::cookie::CookiePart;
-use crate::percent::PercentEncodedString;
+use crate::helpers::cookie::Part as CookiePart;
+use crate::helpers::percent::EncodedString as PercentEncodedString;
 
 #[derive(Deserialize)]
 pub struct ReturnUrl {
@@ -34,7 +34,7 @@ pub async fn get_handler(
 }
 
 #[derive(Deserialize)]
-pub struct LoginRequest {
+pub struct PostRequest {
 	username: String,
 	password: String,
 	#[serde(default = "default_keep_logged_in")]
@@ -46,11 +46,11 @@ const fn default_keep_logged_in() -> bool {
 }
 
 pub async fn post_handler(
-	extract::Form(LoginRequest {
+	extract::Form(PostRequest {
 		username,
 		password,
 		keep_logged_in,
-	}): extract::Form<LoginRequest>,
+	}): extract::Form<PostRequest>,
 	extract::Query(ReturnUrl { return_url }): extract::Query<ReturnUrl>,
 	extract::Extension(database): extract::Extension<Arc<Database>>,
 	extract::Extension(config): extract::Extension<Arc<Config>>,
@@ -90,11 +90,7 @@ pub async fn post_handler(
 	Ok(
 		(
 			CookiePart(token_cookie),
-			Redirect::to(
-				&return_url
-					.map(|PercentEncodedString(decoded)| decoded)
-					.unwrap_or_else(|| "/".to_owned()),
-			),
+			Redirect::to(&return_url.map_or_else(|| "/".to_owned(), PercentEncodedString::into_decoded)),
 		)
 			.into_response(),
 	)

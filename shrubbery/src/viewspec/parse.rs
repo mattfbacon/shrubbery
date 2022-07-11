@@ -70,7 +70,7 @@ fn tag(input: &str) -> IResult<'_> {
 			} else {
 				OPERATOR_CHARS
 			}))),
-			|unquoted: &str| unquoted.trim(),
+			str::trim,
 		)
 	};
 	let tag_part = |first| {

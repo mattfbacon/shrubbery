@@ -52,8 +52,8 @@ impl<'de> serde::Deserialize<'de> for Key {
 		D::Error: serde::de::Error,
 	{
 		use serde::de::Error;
-		let deserialized = <std::borrow::Cow<'_, str>>::deserialize(deserializer)?;
-		let decoded = base64::decode(deserialized.as_bytes()).map_err(Error::custom)?;
+		let raw = <std::borrow::Cow<'_, str>>::deserialize(deserializer)?;
+		let decoded = base64::decode(raw.as_bytes()).map_err(Error::custom)?;
 		Ok(Self(decoded.as_slice().try_into().map_err(Error::custom)?))
 	}
 }

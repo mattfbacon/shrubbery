@@ -13,6 +13,11 @@
 	private_in_public,
 	rust_2018_idioms
 )]
+#![warn(clippy::pedantic)]
+#![allow(
+	clippy::unused_async, // axum requires handlers to be async even if they have no await points
+	clippy::let_underscore_drop, // I don't think the behavior is unexpected and this disallows the `let _ =` pattern to ignore `Err` variants of `Result`s
+)]
 #![forbid(unsafe_code)]
 
 use std::sync::Arc;
@@ -23,7 +28,6 @@ mod config;
 mod database;
 mod error;
 mod helpers;
-mod percent;
 mod routes;
 mod server;
 mod timestamp;

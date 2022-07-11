@@ -49,13 +49,13 @@ pub struct WrongFieldOrder(pub &'static str);
 #[error("unexpected end of fields (expected {0:?} field)")]
 pub struct ExpectedField(pub &'static str);
 
-pub use template::error_response;
+pub use template::error_response as response;
 
 macro_rules! impl_response {
 	($struct_name:ident, $status:ident) => {
 		impl axum::response::IntoResponse for $struct_name {
 			fn into_response(self) -> axum::response::Response {
-				crate::error::error_response(&self, http::StatusCode::$status)
+				crate::error::response(&self, http::StatusCode::$status)
 			}
 		}
 	};
@@ -85,6 +85,6 @@ impl IntoResponse for Io {
 			// ErrorKind::PermissionDenied => StatusCode::FORBIDDEN,
 			_ => StatusCode::INTERNAL_SERVER_ERROR,
 		};
-		crate::error::error_response(&self, status_code)
+		response(&self, status_code)
 	}
 }

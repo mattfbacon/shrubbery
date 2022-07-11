@@ -16,6 +16,8 @@ pub fn is_in_past(t: &Timestamp) -> bool {
 
 /// for `#[serde(with)]`
 pub mod html_date {
+	#![allow(clippy::trivially_copy_pass_by_ref)]
+
 	use chrono::Utc;
 	use serde::de::{self, Deserialize, Deserializer};
 	use serde::ser::{Serialize, Serializer};
@@ -43,6 +45,8 @@ pub mod html_date {
 
 /// for `#[serde(with)]`
 pub mod html_time {
+	#![allow(clippy::trivially_copy_pass_by_ref)]
+
 	use serde::de::{self, Deserialize, Deserializer};
 	use serde::ser::{Serialize, Serializer};
 

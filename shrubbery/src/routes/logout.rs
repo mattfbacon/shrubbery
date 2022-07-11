@@ -1,7 +1,7 @@
 use axum::response::{IntoResponse, Redirect};
 use axum::Router;
 
-use crate::helpers::cookie::CookiePart;
+use crate::helpers::cookie::Part as CookiePart;
 
 pub async fn handler() -> impl IntoResponse {
 	(

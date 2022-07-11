@@ -29,12 +29,11 @@ axum_easy_multipart::impl_for_from_str!(MediaType);
 
 impl Display for MediaType {
 	fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-		use MediaType::*;
 		formatter.write_str(match (self, formatter.alternate()) {
-			(Image, true) => "Image",
-			(Image, false) => "image",
-			(Video, true) => "Video",
-			(Video, false) => "video",
+			(Self::Image, true) => "Image",
+			(Self::Image, false) => "image",
+			(Self::Video, true) => "Video",
+			(Self::Video, false) => "video",
 		})
 	}
 }
@@ -63,7 +62,7 @@ impl MediaType {
 		Helper(value)
 	}
 
-	pub fn from_mime(mime: mime::Mime) -> Option<Self> {
+	pub fn from_mime(mime: &mime::Mime) -> Option<Self> {
 		match mime.type_() {
 			mime::IMAGE => Some(Self::Image),
 			mime::VIDEO => Some(Self::Video),

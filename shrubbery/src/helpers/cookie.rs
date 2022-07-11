@@ -2,9 +2,9 @@ use axum::response::{IntoResponseParts, ResponseParts};
 use cookie::Cookie;
 
 /// Simple wrapper around `cookie::Cookie` that implements `axum::response::IntoResponseParts`
-pub struct CookiePart<'a>(pub Cookie<'a>);
+pub struct Part<'a>(pub Cookie<'a>);
 
-impl IntoResponseParts for CookiePart<'_> {
+impl IntoResponseParts for Part<'_> {
 	type Error = std::convert::Infallible;
 
 	fn into_response_parts(self, mut res: ResponseParts) -> Result<ResponseParts, Self::Error> {
@@ -13,13 +13,13 @@ impl IntoResponseParts for CookiePart<'_> {
 	}
 }
 
-impl<'a> From<Cookie<'a>> for CookiePart<'a> {
+impl<'a> From<Cookie<'a>> for Part<'a> {
 	fn from(inner: Cookie<'a>) -> Self {
 		Self(inner)
 	}
 }
 
-impl CookiePart<'_> {
+impl Part<'_> {
 	pub fn encode(&self) -> http::HeaderValue {
 		self.0.to_string().parse().unwrap() // we assert that an encoded value should always be a valid header value
 	}
@@ -29,7 +29,7 @@ impl CookiePart<'_> {
 	}
 }
 
-impl<'a> CookiePart<'a> {
+impl<'a> Part<'a> {
 	pub fn new_removal(name: &'a str) -> Self {
 		let mut cookie = Cookie::named(name);
 		cookie.make_removal();
