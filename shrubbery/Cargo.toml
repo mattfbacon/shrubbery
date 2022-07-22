@@ -32,10 +32,10 @@ tracing-subscriber = "0.3"
 nom = "7"
 
 # sql
-ormx = { git = "https://github.com/mattfbacon/ormx", rev = "9062fcd8820370c8218de417bd39161d52592d0b", features = [
+ormx = { git = "https://github.com/mattfbacon/ormx", rev = "ae3e6995a28c0a9da529a67f26bc0ac5425e4f4b", features = [
 	"postgres",
 ] }
-sqlx = { version = "0.5", features = [
+sqlx = { version = "0.6", features = [
 	"chrono",
 	"postgres",
 	"runtime-tokio-rustls",
