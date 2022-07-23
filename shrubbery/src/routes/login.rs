@@ -78,7 +78,7 @@ pub async fn post_handler(
 	}
 
 	user
-		.set_last_login(database, Some(crate::timestamp::now()))
+		.set_last_login(database, Some(crate::timestamp::Timestamp::now()))
 		.await
 		.map_err(error::Sqlx)?;
 

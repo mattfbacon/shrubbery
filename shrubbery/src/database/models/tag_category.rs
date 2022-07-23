@@ -16,7 +16,7 @@ pub struct TagCategory {
 	pub description: Option<String>,
 	#[ormx(custom_type, set)]
 	pub color: Color,
-	#[ormx(default)]
+	#[ormx(custom_type, default)]
 	pub created_time: Timestamp,
 	pub created_by: Option<UserId>,
 }

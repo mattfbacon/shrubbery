@@ -18,7 +18,7 @@ pub struct Tag {
 
 impl Tag {
 	pub async fn by_id(database: &Database, id: models::TagId) -> sqlx::Result<Option<Self>> {
-		sqlx::query_as!(Self, r#"SELECT tags.id, tags.name, tags.description, tags.category, tags.created_time, (SELECT name FROM users WHERE id = tags.id) as created_by FROM tags WHERE id = $1"#, id).fetch_optional(database).await
+		sqlx::query_as!(Self, r#"SELECT tags.id, tags.name, tags.description, tags.category, tags.created_time as "created_time: crate::timestamp::Timestamp", (SELECT name FROM users WHERE id = tags.id) as created_by FROM tags WHERE id = $1"#, id).fetch_optional(database).await
 	}
 }
 

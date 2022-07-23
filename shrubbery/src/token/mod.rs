@@ -1,30 +1,31 @@
-use chrono::Duration;
 use serde::{Deserialize, Serialize};
+use time::Duration;
 
 use crate::database::models::UserId;
-use crate::timestamp::{self, Timestamp};
+use crate::timestamp::Timestamp;
 
 pub mod crypt;
 pub use crypt::Key;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Token {
-	#[serde(with = "chrono::serde::ts_seconds")]
+	#[serde(with = "crate::timestamp::unix")]
 	expires_at: Timestamp,
 	pub user_id: UserId,
 }
 
+const TOKEN_EXPIRATION_TIME: Duration = Duration::days(1);
+
 impl Token {
 	pub fn new(user_id: UserId) -> Self {
-		let token_expiration_time = Duration::days(1); // not const
 		Self {
 			user_id,
-			expires_at: timestamp::now() + token_expiration_time,
+			expires_at: Timestamp::now() + TOKEN_EXPIRATION_TIME,
 		}
 	}
 
 	pub fn is_expired(&self) -> bool {
-		timestamp::is_in_past(&self.expires_at)
+		self.expires_at.is_in_past()
 	}
 }
 

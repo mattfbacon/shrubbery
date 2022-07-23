@@ -36,7 +36,7 @@ ormx = { git = "https://github.com/mattfbacon/ormx", rev = "ae3e6995a28c0a9da529
 	"postgres",
 ] }
 sqlx = { version = "0.6", features = [
-	"chrono",
+	"time",
 	"postgres",
 	"runtime-tokio-rustls",
 	"macros",
@@ -62,10 +62,15 @@ tower-http = { version = "0.3", features = ["fs", "trace"] }
 # misc
 axum-easy-multipart = { path = "../axum-easy-multipart" }
 bindable = "^0.1.2"
-chrono = { version = "0.4", features = ["serde"] }
 figment = { version = "0.10", features = ["env", "toml"] }
 mime = "0.3"
 rand = "0.8"
 smartstring = "1"
 tempfile = "3"
 thiserror = "1"
+time = { version = "0.3", features = [
+	"serde",
+	"macros",
+	"formatting",
+	"parsing",
+] }

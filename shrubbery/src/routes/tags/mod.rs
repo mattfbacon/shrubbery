@@ -47,7 +47,7 @@ pub async fn get_handler(
 		return Err(error::EntityNotFound("page").into());
 	}
 
-	let tags = sqlx::query_as!(Tag, r#"SELECT tags.id, tags.name, tags.description, tag_categories.name as "category?", tags.created_time, users.username as "created_by?" FROM tags LEFT JOIN users ON tags.created_by = users.id LEFT JOIN tag_categories ON tags.category = tag_categories.id ORDER BY tags.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await.map_err(error::Sqlx)?;
+	let tags = sqlx::query_as!(Tag, r#"SELECT tags.id, tags.name, tags.description, tag_categories.name as "category?", tags.created_time as "created_time: crate::timestamp::Timestamp", users.username as "created_by?" FROM tags LEFT JOIN users ON tags.created_by = users.id LEFT JOIN tag_categories ON tags.category = tag_categories.id ORDER BY tags.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await.map_err(error::Sqlx)?;
 
 	let tag_categories = shared::get_tag_categories_lean(database)
 		.await

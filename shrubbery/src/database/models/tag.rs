@@ -13,7 +13,7 @@ pub struct Tag {
 	pub name: String,
 	pub description: Option<String>,
 	pub category: Option<TagCategoryId>,
-	#[ormx(default)]
+	#[ormx(custom_type, default)]
 	pub created_time: Timestamp,
 	pub created_by: Option<UserId>,
 }

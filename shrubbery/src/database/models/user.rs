@@ -18,9 +18,9 @@ pub struct User {
 	pub email: Option<String>,
 	#[ormx(default, custom_type, set)]
 	pub role: UserRole,
-	#[ormx(default)]
+	#[ormx(custom_type, default)]
 	pub created_time: Timestamp,
-	#[ormx(default, set)]
+	#[ormx(custom_type, default, set)]
 	pub last_login: Option<Timestamp>,
 }
 

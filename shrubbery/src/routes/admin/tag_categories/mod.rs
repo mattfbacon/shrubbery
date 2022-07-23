@@ -47,7 +47,7 @@ pub async fn get_handler(
 		return Err(error::EntityNotFound("page").into());
 	}
 
-	let tag_categories = sqlx::query_as!(TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time, users.username as "created_by?" FROM tag_categories LEFT JOIN users ON tag_categories.created_by = users.id ORDER BY tag_categories.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await.map_err(error::Sqlx)?;
+	let tag_categories = sqlx::query_as!(TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time as "created_time: crate::timestamp::Timestamp", users.username as "created_by?" FROM tag_categories LEFT JOIN users ON tag_categories.created_by = users.id ORDER BY tag_categories.id OFFSET $1 LIMIT $2"#, pagination.offset(), pagination.limit()).fetch_all(database).await.map_err(error::Sqlx)?;
 
 	Ok(Template {
 		self_user,

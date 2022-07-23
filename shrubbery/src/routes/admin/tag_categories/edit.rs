@@ -21,7 +21,7 @@ impl super::TagCategoryWithUserResolved {
 		database: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
 		id: models::TagCategoryId,
 	) -> sqlx::Result<Option<Self>> {
-		sqlx::query_as!(super::TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time, (SELECT name FROM users WHERE id = tag_categories.created_by) as created_by FROM tag_categories WHERE id = $1"#, id).fetch_optional(database).await
+		sqlx::query_as!(super::TagCategoryWithUserResolved, r#"SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as "color: models::Color", tag_categories.created_time as "created_time: crate::timestamp::Timestamp", (SELECT name FROM users WHERE id = tag_categories.created_by) as created_by FROM tag_categories WHERE id = $1"#, id).fetch_optional(database).await
 	}
 }
 

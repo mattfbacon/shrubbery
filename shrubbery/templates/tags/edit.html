@@ -24,8 +24,8 @@
 	</select>
 	<label for="created_time">Created Time</label>
 	<div id="created_time" class="input-group">
-		<input type="date" disabled value="{{requested_tag.created_time.date().format(crate::timestamp::html_date::FORMAT)}}" />
-		<input type="time" disabled value="{{requested_tag.created_time.time().format("%T")}}" />
+		<input type="date" disabled value="{{requested_tag.created_time.html_date()}}" />
+		<input type="time" disabled value="{{requested_tag.created_time.html_time()}}" />
 	</div>
 	<label for="created_by">Created By</label>
 	<input type="text" disabled value="{{requested_tag.created_by.as_deref().unwrap_or("(deleted)")}}" />
