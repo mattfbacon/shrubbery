@@ -79,7 +79,10 @@ fn init_logging(log_level: config::LogLevel) {
 	use tracing_subscriber::util::SubscriberInitExt;
 
 	let filter = FilterFn::new(move |metadata| {
-		let required_level = match metadata.module_path() {
+		let required_level = match metadata
+			.module_path()
+			.map(|module_path| module_path.split("::").next().unwrap())
+		{
 			Some(env!("CARGO_PKG_NAME")) => log_level.internal,
 			_ => log_level.external,
 		};
