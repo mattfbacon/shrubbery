@@ -1,8 +1,8 @@
 [package]
-name = "shrubbery"
-version = "0.1.0"
 edition = "2021"
 license = "AGPL-3.0-or-later"
+name = "shrubbery"
+version = "0.1.0"
 
 [dependencies]
 # askama
@@ -35,23 +35,10 @@ nom = "7"
 ormx = { git = "https://github.com/mattfbacon/ormx", rev = "ae3e6995a28c0a9da529a67f26bc0ac5425e4f4b", features = [
 	"postgres",
 ] }
-sqlx = { version = "0.6", features = [
-	"time",
-	"postgres",
-	"runtime-tokio-rustls",
-	"macros",
-	"migrate",
-] }
+sqlx = { version = "0.6", features = ["macros", "migrate", "postgres", "runtime-tokio-rustls", "time"] }
 
 # web
-axum = { version = "0.5", features = [
-	"headers",
-	"http1",
-	"http2",
-	"multipart",
-	"tower-log",
-	"query",
-] }
+axum = { version = "0.5", features = ["headers", "http1", "http2", "multipart", "query", "tower-log"] }
 cookie = "0.16"
 headers = "0.3"
 http = "0.2"
@@ -68,9 +55,4 @@ rand = "0.8"
 smartstring = "1"
 tempfile = "3"
 thiserror = "1"
-time = { version = "0.3", features = [
-	"serde",
-	"macros",
-	"formatting",
-	"parsing",
-] }
+time = { version = "0.3", features = ["formatting", "macros", "parsing", "serde"] }
