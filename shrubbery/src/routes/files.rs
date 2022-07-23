@@ -172,7 +172,7 @@ async fn post_replace_handler(
 		.ok_or(error::BadContentType)?;
 	let file = sqlx::query_as!(
 		models::File,
-		r#"UPDATE files SET media_type = $2 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
+		r#"UPDATE files SET media_type = $2 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: models::MediaType""#,
 		file_id,
 		media_type as _,
 	)
@@ -206,7 +206,7 @@ async fn post_update_handler(
 	crate::helpers::set_none_if_empty(&mut description);
 	let file = sqlx::query_as!(
 		models::File,
-		r#"UPDATE files SET name = $2, description = $3, media_type = $4 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: _""#,
+		r#"UPDATE files SET name = $2, description = $3, media_type = $4 WHERE id = $1 RETURNING id, name, description, media_type as "media_type: models::MediaType""#,
 		file_id,
 		name,
 		description,
