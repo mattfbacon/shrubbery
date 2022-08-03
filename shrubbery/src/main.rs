@@ -86,8 +86,8 @@ fn init_logging(log_level: config::LogLevel) {
 			Some(env!("CARGO_PKG_NAME")) => log_level.internal,
 			_ => log_level.external,
 		};
-		// "If a Level is considered less than a LevelFilter, it should be considered enabled; if greater than or equal to the LevelFilter, that level is disabled."
-		metadata.level() < &required_level
+
+		metadata.level() <= &required_level
 	});
 
 	let layer = tracing_subscriber::fmt::layer()
