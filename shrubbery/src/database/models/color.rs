@@ -40,17 +40,17 @@ pub enum FromHexError {
 
 impl Type<Postgres> for Color {
 	fn type_info() -> PgTypeInfo {
-		String::type_info()
+		<String as Type<Postgres>>::type_info()
 	}
 
 	fn compatible(ty: &PgTypeInfo) -> bool {
-		String::compatible(ty)
+		<String as Type<Postgres>>::compatible(ty)
 	}
 }
 
 impl Encode<'_, Postgres> for Color {
 	fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> IsNull {
-		self.to_hex().encode_by_ref(buf)
+		<_ as Encode<'_, Postgres>>::encode_by_ref(&self.to_hex(), buf)
 	}
 
 	fn produces(&self) -> Option<PgTypeInfo> {
@@ -58,8 +58,7 @@ impl Encode<'_, Postgres> for Color {
 	}
 
 	fn size_hint(&self) -> usize {
-		// this is what the &str impl does
-		std::mem::size_of::<&str>()
+		"\"#abcdef\"".len()
 	}
 }
 

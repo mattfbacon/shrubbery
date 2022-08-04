@@ -1,6 +1,7 @@
 use argon2::password_hash;
 use password_hash::errors::Result as PwResult;
 use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo, PgValueRef, Postgres};
+use sqlx::{Decode, Encode, Type};
 
 #[derive(Debug, Clone)]
 #[repr(transparent)]
@@ -44,25 +45,25 @@ impl TryFrom<String> for PasswordHash {
 	}
 }
 
-impl sqlx::Type<Postgres> for PasswordHash {
+impl Type<Postgres> for PasswordHash {
 	fn type_info() -> PgTypeInfo {
-		String::type_info()
+		<String as Type<Postgres>>::type_info()
 	}
 
 	fn compatible(other: &PgTypeInfo) -> bool {
-		String::compatible(other)
+		<String as Type<Postgres>>::compatible(other)
 	}
 }
 
-impl sqlx::Encode<'_, Postgres> for PasswordHash {
+impl Encode<'_, Postgres> for PasswordHash {
 	fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> sqlx::encode::IsNull {
-		self.hash.encode_by_ref(buf)
+		<_ as Encode<'_, Postgres>>::encode_by_ref(&self.hash, buf)
 	}
 }
 
-impl sqlx::Decode<'_, Postgres> for PasswordHash {
+impl Decode<'_, Postgres> for PasswordHash {
 	fn decode(value_ref: PgValueRef<'_>) -> Result<Self, sqlx::error::BoxDynError> {
-		let raw = String::decode(value_ref)?;
+		let raw = <String as Decode<'_, Postgres>>::decode(value_ref)?;
 		Ok(Self::try_from(raw)?)
 	}
 }
