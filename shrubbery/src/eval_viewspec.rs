@@ -7,14 +7,14 @@ use crate::database::models;
 
 struct Bindings<'a> {
 	bindings: Vec<&'a str>,
-	starting_value: usize,
 }
 
 impl<'a> Bindings<'a> {
-	pub fn new(starting_value: usize) -> Self {
+	const STARTING_VALUE: usize = 1;
+
+	pub fn new() -> Self {
 		Self {
 			bindings: Vec::default(),
-			starting_value,
 		}
 	}
 
@@ -29,7 +29,7 @@ impl<'a> Bindings<'a> {
 
 		let index = self.bindings.len();
 		self.bindings.push(value);
-		Helper(index + self.starting_value)
+		Helper(index + Self::STARTING_VALUE)
 	}
 
 	pub fn as_values(&self) -> impl Iterator<Item = &'a str> + '_ {
@@ -140,7 +140,7 @@ fn make_query(viewspec: &Ast, after: Option<models::FileId>, limit: i64) -> (Str
 		}
 	}
 
-	let mut bindings = Bindings::new(0);
+	let mut bindings = Bindings::new();
 	let query = format!(
 		"SELECT files.id, files.name FROM file_tags LEFT JOIN files ON files.id = file_tags.file WHERE {} AND file_tags.file > {} ORDER BY file_tags.file LIMIT {}",
 		ConditionHelper {
@@ -245,7 +245,7 @@ mod test {
 
 			impl Display for Helper<'_> {
 				fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-					let mut bindings = super::Bindings::new(0);
+					let mut bindings = super::Bindings::new();
 					(self.func)(formatter, self.viewspec, &mut bindings);
 					Ok(())
 				}
