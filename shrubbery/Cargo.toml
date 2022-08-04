@@ -53,6 +53,7 @@ bindable = "^0.1.2"
 figment = { version = "0.10", features = ["env", "toml"] }
 mime = "0.3"
 rand = "0.8"
+static-router = { path = "../static-router" }
 tempfile = "3"
 thiserror = "1"
 time = { version = "0.3", features = ["formatting", "macros", "parsing", "serde"] }
