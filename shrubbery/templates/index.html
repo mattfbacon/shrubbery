@@ -14,10 +14,11 @@
 	<input type="hidden" name="page_size" value="{{page_size}}" />
 	<label for="search">Query:</label>
 	<input type="search" id="search" name="search" placeholder="tag & !other tag" />
+	{% if let Some(Err(error)) = search_results %}{{error.render()|safe}}{% endif %}
 	<input type="submit" value="Search" />
 </form>
 
-{% if let Some(search_results) = search_results -%}
+{% if let Some(Ok(search_results)) = search_results -%}
 	<ul>
 		{% for (id, name) in search_results -%}
 			<li><a href="/files/{{id}}">{{name}}</a></li>

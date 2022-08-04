@@ -62,3 +62,29 @@ nav#navbar a {
 #file-embed {
 	max-width: 100%;
 }
+
+.error-block {
+	background: #eee;
+	padding: 0.5rem;
+	border-radius: 0.5rem;
+}
+
+.error-block__error {
+	color: red;
+}
+
+.error-block__note {
+	color: dodgerblue;
+}
+
+.error-block__comment-span {
+	display: inline-block;
+	position: relative;
+}
+
+.error-block__comment {
+	display: inline-block;
+	position: absolute;
+	top: 1rem;
+	left: 0;
+}

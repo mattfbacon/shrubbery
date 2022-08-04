@@ -3,6 +3,7 @@ pub mod cookie;
 pub mod or_null;
 pub mod pagination;
 pub mod percent;
+pub mod viewspec;
 
 pub use or_null::OrNull;
 
