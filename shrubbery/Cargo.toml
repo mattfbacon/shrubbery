@@ -15,7 +15,7 @@ tokio = { version = "1", features = ["net", "rt-multi-thread", "macros"] }
 tower = { version = "0.4", default_features = false }
 
 # cryptography
-aes-gcm = { version = "0.9", features = ["std"] }
+aes-gcm = { version = "0.10", features = ["std"] }
 argon2 = { version = "0.4", features = ["password-hash", "std"] }
 
 # data formats, {de,}serialization, {en,de}cryption

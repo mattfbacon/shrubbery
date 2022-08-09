@@ -1,6 +1,7 @@
-use aes_gcm::aead::NewAead as _;
-use aes_gcm::{Aes256Gcm, Nonce};
+use aes_gcm::aead::AeadInPlace as _;
+use aes_gcm::{Aes256Gcm, KeyInit as _, Nonce};
 use cookie::Cookie;
+use rand::RngCore as _;
 
 #[derive(Debug, thiserror::Error)]
 pub enum EncryptError {
@@ -64,9 +65,6 @@ impl super::Token {
 		key: &Key,
 		keep_logged_in: bool,
 	) -> Result<Cookie<'static>, EncryptError> {
-		use aes_gcm::aead::AeadInPlace as _;
-		use rand::RngCore as _;
-
 		let serialized_size = bincode::serialized_size(self)?.try_into().unwrap();
 		// 0. create buffer with desired size and generate and insert nonce
 		let mut encrypted = vec![0; NONCE_LEN + serialized_size + TAG_LEN];
