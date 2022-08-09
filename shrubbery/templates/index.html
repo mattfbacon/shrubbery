@@ -13,7 +13,7 @@
 <form method="get">
 	<input type="hidden" name="page_size" value="{{page_size}}" />
 	<label for="search">Query:</label>
-	<input type="search" id="search" name="search" placeholder="tag & !other tag" />
+	<input type="search" id="search" name="search" placeholder="tag & !other tag" required />
 	{% if let Some(Err(error)) = search_results %}{{error.render()|safe}}{% endif %}
 	<input type="submit" value="Search" />
 </form>
