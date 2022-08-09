@@ -2,16 +2,118 @@
 	--space-large: 2rem;
 	--space-medium: 1rem;
 	--space-small: 0.3rem;
+
+	--background: #fff;
+	--background-secondary: #eee;
+	--foreground-secondary: #555;
+	--foreground: #222;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: #222;
+		--background-secondary: #333;
+		--foreground-secondary: #bbb;
+		--foreground: #ddd;
+	}
+
+	a:link {
+		color: #5e9d9f;
+	}
+	a:visited {
+		color: #a589c1;
+	}
+	a:active {
+		color: #8d6ab0;
+	}
+
+	input[type="button"],
+	input[type="checkbox"],
+	input[type="color"],
+	input[type="date"],
+	input[type="datetime-local"],
+	input[type="email"],
+	input[type="file"],
+	input[type="image"],
+	input[type="month"],
+	input[type="number"],
+	input[type="password"],
+	input[type="radio"],
+	input[type="range"],
+	input[type="reset"],
+	input[type="search"],
+	input[type="submit"],
+	input[type="tel"],
+	input[type="text"],
+	input[type="time"],
+	input[type="url"],
+	input[type="week"] {
+		color: var(--foreground);
+	}
+
+	input[type="button"],
+	input[type="color"],
+	input[type="date"],
+	input[type="datetime-local"],
+	input[type="email"],
+	input[type="month"],
+	input[type="number"],
+	input[type="password"],
+	input[type="reset"],
+	input[type="search"],
+	input[type="submit"],
+	input[type="tel"],
+	input[type="text"],
+	input[type="time"],
+	input[type="url"],
+	input[type="week"] {
+		border-radius: 2px;
+	}
+
+	input[type="button"],
+	input[type="checkbox"],
+	input[type="color"],
+	input[type="date"],
+	input[type="datetime-local"],
+	input[type="email"],
+	input[type="image"],
+	input[type="month"],
+	input[type="number"],
+	input[type="password"],
+	input[type="radio"],
+	input[type="range"],
+	input[type="search"],
+	input[type="tel"],
+	input[type="text"],
+	input[type="time"],
+	input[type="url"],
+	input[type="week"] {
+		background: var(--background);
+	}
+
+	input[type="reset"],
+	input[type="submit"] {
+		background-color: var(--background-secondary);
+		transition: background-color 0.1s ease;
+		border-radius: 4px;
+	}
+
+	input[type="reset"]:active,
+	input[type="submit"]:active {
+		background-color: var(--background);
+	}
 }
 
 body {
+	background: var(--background);
+	color: var(--foreground);
 	margin: var(--space-medium);
 }
 
 footer#license-notice {
 	font-size: small;
 	margin-top: var(--space-large);
-	border-top: 1px solid gray;
+	border-top: 1px solid var(--foreground-secondary);
 }
 
 form > label + input:not([type="checkbox"]),
@@ -64,7 +166,7 @@ nav#navbar a {
 }
 
 .error-block {
-	background: #eee;
+	background: var(--background-secondary);
 	padding: 0.5rem;
 	border-radius: 0.25rem;
 }
