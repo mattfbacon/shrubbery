@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fmt::{self, Display, Formatter};
 
 use serde::{Deserialize, Deserializer};
@@ -8,25 +7,25 @@ use viewspec::lex::token::Type as TokenType;
 use viewspec::parse::{self, Ast};
 
 #[derive(Debug)]
-pub struct Error {
-	pub raw: String,
-	pub error: parse::Error,
-}
+pub struct Error(pub parse::Error);
 
 impl Error {
-	pub fn render(&self) -> impl Display + '_ {
-		struct Helper<'a>(&'a Error);
+	pub fn render<'a>(&'a self, raw: &'a str) -> impl Display + 'a {
+		struct Helper<'a> {
+			error: &'a Error,
+			raw: &'a str,
+		}
 
 		impl Display for Helper<'_> {
 			fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-				self.0.render_into(formatter)
+				self.error.render_into(formatter, &self.raw)
 			}
 		}
 
-		Helper(self)
+		Helper { error: &self, raw }
 	}
 
-	pub fn render_into(&self, f: &mut Formatter<'_>) -> fmt::Result {
+	pub fn render_into(&self, f: &mut Formatter<'_>, raw: &str) -> fmt::Result {
 		fn escape(s: &str) -> impl Display + '_ {
 			askama_escape::MarkupDisplay::new_unsafe(s, askama_escape::Html)
 		}
@@ -42,9 +41,9 @@ impl Error {
 		}
 
 		write!(f, "<pre class=\"error-block\"><code>")?;
-		match &self.error {
+		match &self.0 {
 			parse::Error::CategoryTooLong(span) => {
-				let (before, within, after) = span.split_three(&self.raw).unwrap();
+				let (before, within, after) = span.split_three(raw).unwrap();
 				writeln!(
 					f,
 					"<strong><span class=\"error-block__error\">error</span>: category is too long</strong>"
@@ -66,10 +65,10 @@ impl Error {
 					)?;
 					writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
 					write!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-					writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ more input needed here</span>&nbsp;</span>", escape(&self.raw))?;
+					writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ more input needed here</span>&nbsp;</span>", escape(raw))?;
 				}
 				lex::Error::InvalidEscape(span, reason) => {
-					let (before, within, after) = span.split_three(&self.raw).unwrap();
+					let (before, within, after) = span.split_three(raw).unwrap();
 
 					writeln!(
 						f,
@@ -106,7 +105,7 @@ impl Error {
 				writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
 				write!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
 				if let Some((span, _ty)) = got {
-					let (before, within, after) = span.split_three(&self.raw).unwrap();
+					let (before, within, after) = span.split_three(raw).unwrap();
 					writeln!(
 						f,
 						"{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">{carets} expected tag here</span>{}</span>{}",
@@ -116,11 +115,11 @@ impl Error {
 						carets = Carets(span.len()),
 					)?;
 				} else {
-					writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ expected tag here</span>&nbsp;</span>", escape(&self.raw))?;
+					writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ expected tag here</span>&nbsp;</span>", escape(raw))?;
 				}
 			}
 			parse::Error::UnclosedParenthesis { open_location } => {
-				let (before, within, after) = Span::single(*open_location).split_three(&self.raw).unwrap();
+				let (before, within, after) = Span::single(*open_location).split_three(raw).unwrap();
 				writeln!(
 					f,
 					"<strong><span class=\"error-block__error\">error</span>: unclosed parenthesis</strong>"
@@ -143,17 +142,17 @@ impl Error {
 }
 
 #[derive(Debug)]
-pub struct ViewSpecOrError(pub Result<Ast, Error>);
+pub struct ViewSpecOrError {
+	pub parsed: Result<Ast, Error>,
+	pub raw: String,
+}
 
 impl<'de> Deserialize<'de> for ViewSpecOrError {
 	fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-		let raw = <Cow<'de, str>>::deserialize(deserializer)?;
-		Ok(Self(match viewspec::lex_and_parse(raw.bytes()) {
-			Ok(ast) => Ok(ast),
-			Err(error) => Err(Error {
-				raw: raw.into_owned(),
-				error,
-			}),
-		}))
+		let raw = String::deserialize(deserializer)?;
+		Ok(Self {
+			parsed: viewspec::lex_and_parse(raw.bytes()).map_err(Error),
+			raw,
+		})
 	}
 }

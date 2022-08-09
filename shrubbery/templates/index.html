@@ -13,12 +13,12 @@
 <form method="get">
 	<input type="hidden" name="page_size" value="{{page_size}}" />
 	<label for="search">Query:</label>
-	<input type="search" id="search" name="search" placeholder="tag & !other tag" required />
-	{% if let Some(Err(error)) = search_results %}{{error.render()|safe}}{% endif %}
+	<input type="search" id="search" name="search" placeholder="tag & !other tag" required {% if let Some((raw, _)) = search_results.as_ref() %}value="{{raw}}"{% endif %} />
+	{% if let Some((raw, Err(error))) = search_results %}{{error.render(raw.as_str())|safe}}{% endif %}
 	<input type="submit" value="Search" />
 </form>
 
-{% if let Some(Ok(search_results)) = search_results -%}
+{% if let Some((raw, Ok(search_results))) = search_results -%}
 	<ul>
 		{% for (id, name) in search_results -%}
 			<li><a href="/files/{{id}}">{{name}}</a></li>

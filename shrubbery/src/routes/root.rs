@@ -12,7 +12,7 @@ use crate::helpers::viewspec::{Error as ViewSpecError, ViewSpecOrError};
 #[template(path = "index.html")]
 struct Template {
 	self_user: models::User,
-	search_results: Option<Result<Vec<(models::FileId, String)>, ViewSpecError>>,
+	search_results: Option<(String, Result<Vec<(models::FileId, String)>, ViewSpecError>)>,
 	page_size: i64,
 }
 crate::helpers::impl_into_response!(Template);
@@ -35,13 +35,20 @@ pub async fn get_handler(
 	}): extract::Query<Query>,
 	extract::Extension(database): extract::Extension<Arc<Database>>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
-	let search_results = match viewspec.map(|ViewSpecOrError(result)| result) {
-		Some(Ok(viewspec)) => Some(Ok(
-			crate::eval_viewspec::evaluate(&viewspec, &*database, after, page_size)
+	let search_results = match viewspec {
+		Some(ViewSpecOrError {
+			raw,
+			parsed: Ok(viewspec),
+		}) => {
+			let results = crate::eval_viewspec::evaluate(&viewspec, &*database, after, page_size)
 				.await
-				.map_err(error::Sqlx)?,
-		)),
-		Some(Err(error)) => Some(Err(error)),
+				.map_err(error::Sqlx)?;
+			Some((raw, Ok(results)))
+		}
+		Some(ViewSpecOrError {
+			raw,
+			parsed: Err(error),
+		}) => Some((raw, Err(error))),
 		None => None,
 	};
 
