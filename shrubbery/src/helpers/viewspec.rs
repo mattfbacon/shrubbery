@@ -41,7 +41,7 @@ impl Error {
 			}
 		}
 
-		writeln!(f, "<pre class=\"error-block\"><code>")?;
+		write!(f, "<pre class=\"error-block\"><code>")?;
 		match &self.error {
 			parse::Error::CategoryTooLong(span) => {
 				let (before, within, after) = span.split_three(&self.raw).unwrap();

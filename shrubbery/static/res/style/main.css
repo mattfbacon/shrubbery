@@ -66,7 +66,7 @@ nav#navbar a {
 .error-block {
 	background: #eee;
 	padding: 0.5rem;
-	border-radius: 0.5rem;
+	border-radius: 0.25rem;
 }
 
 .error-block__error {
