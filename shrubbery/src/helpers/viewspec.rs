@@ -57,9 +57,6 @@ impl Error {
 					escape(after),
 					carets = Carets(span.len()),
 				)?;
-				for _ in 0..2 {
-					writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				}
 			}
 			parse::Error::ExpectedTagGot(Some((_span, TokenType::Error(ref error)))) => match &**error {
 				lex::Error::StringEnd => {
@@ -70,9 +67,6 @@ impl Error {
 					writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
 					write!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
 					writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ more input needed here</span>&nbsp;</span>", escape(&self.raw))?;
-					for _ in 0..2 {
-						writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-					}
 				}
 				lex::Error::InvalidEscape(span, reason) => {
 					let (before, within, after) = span.split_three(&self.raw).unwrap();
@@ -91,9 +85,6 @@ impl Error {
 						escape(after),
 						carets = Carets(span.len()),
 					)?;
-					for _ in 0..2 {
-						writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-					}
 				}
 				lex::Error::StringNotUtf8(..) => unreachable!(), // we already read (past) it as a string
 			},
@@ -127,9 +118,6 @@ impl Error {
 				} else {
 					writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ expected tag here</span>&nbsp;</span>", escape(&self.raw))?;
 				}
-				for _ in 0..2 {
-					writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				}
 			}
 			parse::Error::UnclosedParenthesis { open_location } => {
 				let (before, within, after) = Span::single(*open_location).split_three(&self.raw).unwrap();
@@ -144,10 +132,10 @@ impl Error {
 					escape(within),
 					escape(after),
 				)?;
-				for _ in 0..2 {
-					writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				}
 			}
+		}
+		for _ in 0..2 {
+			writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
 		}
 		writeln!(f, "</code></pre>")?;
 		Ok(())
