@@ -54,7 +54,9 @@ impl Display for Timestamp {
 			.0
 			.format_into(
 				&mut FmtToIo(f),
-				&time::format_description::well_known::Rfc2822,
+				time::macros::format_description!(
+					"[day padding:none] [month repr:short] [year] [hour]:[minute]:[second]"
+				),
 			)
 			.unwrap();
 		Ok(())
