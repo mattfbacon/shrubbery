@@ -1,35 +1,32 @@
 use std::borrow::Cow;
+use std::str::FromStr;
 
 use serde::de::{Deserializer, Error as _};
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
-#[serde(from = "Impl<T>")]
+/// The purpose of `OrNull` is to allow deserializing something like a number from an HTML form, where null is a possibility.
+/// Unlike in some other contexts where omitting the field entirely could be used to signify the lack of value, HTML forms seem to always include every field, and you only have the choice of what value to put for that field.
+/// Within that restriction, the two best options I see for that value are an empty string and the string "null".
+/// However, HTML itself seems to prefer the latter, since when you leave off the `value` attribute on an `option` in a `select`, it will write the string "null" if that field is selected.
+///
+/// Note that `OrNull` uses `FromStr` to get the value of the non-null variant, rather than `Deserialize`. The reason for this is that HTML forms, at least when using Axum's `Form` extractor, are stringly typed.
+/// Thus, attempting to deserialize something other than a string (or something that delegates to deserializing a string, of course) seems to always fail.
+/// Within this context, `FromStr` seems like the best trait to use, since it is specifically meant for parsing data from strings.
+/// Make sure your `T`'s `FromStr` implementation doesn't accept null; otherwise, which is chosen, null or your type, upon receiving `null`, is undefined.
+#[derive(Debug)]
 pub struct OrNull<T>(Option<T>);
 
-struct Null;
-
-impl<'de> Deserialize<'de> for Null {
+impl<'de, T: FromStr> Deserialize<'de> for OrNull<T>
+where
+	T::Err: std::fmt::Display,
+{
 	fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
 		match &*<Cow<'_, str>>::deserialize(de)? {
-			"null" => Ok(Self),
-			_ => Err(D::Error::custom("not null")),
-		}
-	}
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum Impl<T> {
-	Null(Null),
-	Value(T),
-}
-
-impl<T> From<Impl<T>> for OrNull<T> {
-	fn from(impl_: Impl<T>) -> Self {
-		match impl_ {
-			Impl::Null(..) => Self(None),
-			Impl::Value(value) => Self(Some(value)),
+			"null" => Ok(Self(None)),
+			other => T::from_str(&other)
+				.map(Some)
+				.map(Self)
+				.map_err(D::Error::custom),
 		}
 	}
 }
