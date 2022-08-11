@@ -4,9 +4,9 @@ use axum::response::{ErrorResponse, IntoResponse};
 use axum::{extract, Router};
 
 use crate::database::{models, Database};
-use crate::error;
 use crate::helpers::auth;
 use crate::helpers::viewspec::{Error as ViewSpecError, ViewSpecOrError};
+use crate::{error, eval_viewspec};
 
 #[derive(askama::Template)]
 #[template(path = "index.html")]
@@ -39,12 +39,13 @@ pub async fn get_handler(
 		Some(ViewSpecOrError {
 			raw,
 			parsed: Ok(viewspec),
-		}) => {
-			let results = crate::eval_viewspec::evaluate(&viewspec, &*database, after, page_size)
-				.await
-				.map_err(error::Sqlx)?;
-			Some((raw, Ok(results)))
-		}
+		}) => match eval_viewspec::evaluate(&viewspec, &*database, after, page_size).await {
+			Ok(results) => Some((raw, Ok(results))),
+			Err(eval_viewspec::Error::Sqlx(sql_error)) => return Err(error::Sqlx(sql_error).into()),
+			Err(eval_viewspec::Error::User(user_error)) => {
+				Some((raw, Err(ViewSpecError::User(user_error))))
+			}
+		},
 		Some(ViewSpecOrError {
 			raw,
 			parsed: Err(error),

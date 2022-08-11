@@ -39,9 +39,9 @@ impl<'a> Bindings<'a> {
 
 fn make_condition_for_tag<'a>(buf: &mut Formatter<'_>, tag: &'a Tag, bindings: &mut Bindings<'a>) {
 	match tag.as_ref() {
-		TagRef::Category(category) => write!(buf, "file_tags.tag IN (SELECT id FROM tags WHERE category = (SELECT id FROM tag_categories WHERE name = {}))", bindings.next(category)),
-		TagRef::Name(name) => write!(buf, "file_tags.tag IN (SELECT id FROM tags WHERE name = {})", bindings.next(name)),
-		TagRef::Both { category, name } => write!(buf, "file_tags.tag IN (SELECT id FROM tags WHERE name = {} AND category = (SELECT id FROM tag_categories WHERE name = {}))", bindings.next(name), bindings.next(category)),
+		TagRef::Category(category) => write!(buf, "files.id IN (SELECT DISTINCT file_tags.file FROM file_tags WHERE file_tags.tag IN tags_by_category({}))", bindings.next(category)),
+		TagRef::Name(name) => write!(buf, "files.id IN (SELECT DISTINCT file_tags.file FROM file_tags WHERE file_tags.tag IN tags_by_name({}))", bindings.next(name)),
+		TagRef::Both { category, name } => write!(buf, "files.id IN (SELECT DISTINCT file_tags.file FROM file_tags WHERE file_tags.tag IN tag_by_category_and_name({}, {}))", bindings.next(category), bindings.next(name)),
 	}.unwrap();
 }
 
@@ -138,7 +138,7 @@ fn make_query(viewspec: &Ast, after: Option<models::FileId>, limit: i64) -> (Str
 
 	let mut bindings = Bindings::new();
 	let query = format!(
-		"SELECT files.id, files.name FROM file_tags LEFT JOIN files ON files.id = file_tags.file WHERE {} AND file_tags.file > {} ORDER BY file_tags.file LIMIT {}",
+		"SELECT files.id, files.name FROM files WHERE {} AND files.id > {} ORDER BY files.id LIMIT {}",
 		ConditionHelper {
 			viewspec,
 			bindings: Cell::new(Some(&mut bindings)),
@@ -150,18 +150,50 @@ fn make_query(viewspec: &Ast, after: Option<models::FileId>, limit: i64) -> (Str
 	(query, bindings)
 }
 
+#[derive(Debug)]
+pub enum UserError {
+	UnknownTagCategory(String),
+	NoTagsByName(String),
+	UnknownTag { category: String, name: String },
+}
+
+#[derive(Debug)]
+pub enum Error {
+	Sqlx(sqlx::Error),
+	User(UserError),
+}
+
 pub async fn evaluate(
 	viewspec: &Ast,
 	database: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
 	after: Option<models::FileId>,
 	page_size: i64,
-) -> sqlx::Result<Vec<(models::FileId, String)>> {
+) -> Result<Vec<(models::FileId, String)>, Error> {
+	tracing::debug!("evaluating viewspec {viewspec:?}");
+
 	let (query, bindings) = make_query(viewspec, after, page_size);
 	let mut query = sqlx::query_as(&query);
 	for binding in bindings.as_values() {
 		query = query.bind(binding);
 	}
-	query.fetch_all(database).await
+	query.fetch_all(database).await.map_err(|err| match err {
+		sqlx::Error::Database(ref db_error) => {
+			let db_error = db_error.downcast_ref::<sqlx::postgres::PgDatabaseError>();
+			// abusing exception fields to pass the name inclusive-or category back
+			let detail = db_error.detail().map(str::to_owned);
+			let hint = db_error.hint();
+			match db_error.message() {
+				"unknown tag category" => Error::User(UserError::UnknownTagCategory(detail.unwrap())),
+				"no tags by name" => Error::User(UserError::NoTagsByName(detail.unwrap())),
+				"unknown tag" => Error::User(UserError::UnknownTag {
+					category: detail.unwrap(),
+					name: hint.unwrap().to_owned(),
+				}),
+				_ => Error::Sqlx(err),
+			}
+		}
+		other => Error::Sqlx(other),
+	})
 }
 
 #[cfg(test)]

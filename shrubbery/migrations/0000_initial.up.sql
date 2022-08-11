@@ -37,6 +37,17 @@ CREATE TABLE tag_categories (
 );
 CREATE TRIGGER tag_categories_require_created_by_on_insertion BEFORE INSERT ON tag_categories FOR EACH ROW EXECUTE PROCEDURE require_created_by('tag category');
 
+CREATE FUNCTION tag_category_by_name(desired_name tag_categories.name%TYPE) RETURNS tag_categories.id%TYPE RETURNS NULL ON NULL INPUT STABLE LANGUAGE plpgsql AS $func$
+	DECLARE id tag_categories.id%TYPE;
+	BEGIN
+		SELECT tag_categories.id INTO id FROM tag_categories WHERE tag_categories.name = desired_name;
+		IF id IS NULL THEN
+			RAISE EXCEPTION using message = 'unknown tag category', detail = desired_name;
+		END IF;
+		RETURN id;
+	END
+$func$;
+
 CREATE TABLE tags (
 	id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
 	name VARCHAR NOT NULL,
@@ -47,6 +58,27 @@ CREATE TABLE tags (
 	UNIQUE(name, category)
 );
 CREATE TRIGGER tags_require_created_by_on_insertion BEFORE INSERT ON tags FOR EACH ROW EXECUTE PROCEDURE require_created_by('tag');
+
+-- it is not considered an error for there to be no tags in a category
+CREATE FUNCTION tags_by_category(desired_category tag_categories.name%TYPE) RETURNS table(id tags.id%TYPE) STABLE LANGUAGE SQL AS 'SELECT tags.id FROM tags WHERE tags.category = tag_category_by_name(desired_category)';
+CREATE FUNCTION tags_by_name(desired_name tags.name%TYPE) RETURNS table(id tags.id%TYPE) STABLE LANGUAGE plpgsql AS $func$ BEGIN
+	CREATE TEMP TABLE ids ON COMMIT DROP AS SELECT tags.id FROM tags WHERE tags.name = desired_name;
+	IF count(*) = 0 FROM ids THEN -- https://www.postgresql.org/docs/14/plpgsql-expressions.html
+		RAISE EXCEPTION using message = 'no tags by name', detail = desired_name;
+	END IF;
+	SELECT id FROM ids;
+END $func$;
+CREATE FUNCTION tag_by_category_and_name(desired_category tag_categories.name%TYPE, desired_name tags.name%TYPE) RETURNS tags.id%TYPE STABLE LANGUAGE plpgsql AS $func$
+	DECLARE id tags.id%TYPE;
+	BEGIN
+		ASSERT desired_name IS NOT NULL, 'tag name is null';
+		SELECT tags.id INTO id FROM tags WHERE tags.name = desired_name AND tags.category IS NOT DISTINCT FROM tag_category_by_name(desired_category);
+		IF id IS NULL THEN
+			RAISE EXCEPTION using message = 'unknown tag', detail = desired_category, hint = desired_name; -- abusing exception fields
+		END IF;
+		RETURN id;
+	END
+$func$;
 
 CREATE TABLE file_tags (
 	id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
