@@ -122,20 +122,16 @@ fn make_query_condition<'a>(
 }
 
 fn make_query(viewspec: &Ast, after: Option<models::FileId>, limit: i64) -> (String, Bindings<'_>) {
-	use std::cell::RefCell;
+	use std::cell::Cell;
 
 	struct ConditionHelper<'a, 'b> {
 		viewspec: &'b Ast,
-		bindings: RefCell<Option<&'a mut Bindings<'b>>>,
+		bindings: Cell<Option<&'a mut Bindings<'b>>>,
 	}
 
 	impl Display for ConditionHelper<'_, '_> {
 		fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-			make_query_condition(
-				formatter,
-				self.viewspec,
-				self.bindings.borrow_mut().take().unwrap(),
-			);
+			make_query_condition(formatter, self.viewspec, self.bindings.take().unwrap());
 			Ok(())
 		}
 	}
@@ -145,7 +141,7 @@ fn make_query(viewspec: &Ast, after: Option<models::FileId>, limit: i64) -> (Str
 		"SELECT files.id, files.name FROM file_tags LEFT JOIN files ON files.id = file_tags.file WHERE {} AND file_tags.file > {} ORDER BY file_tags.file LIMIT {}",
 		ConditionHelper {
 			viewspec,
-			bindings: RefCell::new(Some(&mut bindings)),
+			bindings: Cell::new(Some(&mut bindings)),
 		},
 		after.unwrap_or(-1),
 		limit,
