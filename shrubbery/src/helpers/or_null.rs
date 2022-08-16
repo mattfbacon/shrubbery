@@ -23,7 +23,7 @@ where
 	fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
 		match &*<Cow<'_, str>>::deserialize(de)? {
 			"null" => Ok(Self(None)),
-			other => T::from_str(&other)
+			other => T::from_str(other)
 				.map(Some)
 				.map(Self)
 				.map_err(D::Error::custom),

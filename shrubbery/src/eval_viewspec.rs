@@ -82,7 +82,7 @@ fn make_query_condition<'a>(
 		};
 
 		match node {
-			Node::Tag(tag) => make_condition_for_tag(buf, &tag, bindings),
+			Node::Tag(tag) => make_condition_for_tag(buf, tag, bindings),
 			Node::Not(inner) => {
 				buf.write_str("NOT (").unwrap();
 				stack.extend(
@@ -221,7 +221,7 @@ mod test {
 			viewspec,
 			bindings,
 		}
-		.go(viewspec.root())
+		.go(viewspec.root());
 	}
 
 	#[test]

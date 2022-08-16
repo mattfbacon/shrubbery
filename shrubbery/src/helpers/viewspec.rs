@@ -19,11 +19,11 @@ impl Error {
 
 		impl Display for Helper<'_> {
 			fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-				self.error.render_into(formatter, &self.raw)
+				self.error.render_into(formatter, self.raw)
 			}
 		}
 
-		Helper { error: &self, raw }
+		Helper { error: self, raw }
 	}
 
 	pub fn render_into(&self, f: &mut Formatter<'_>, raw: &str) -> fmt::Result {
@@ -76,8 +76,11 @@ impl Error {
 					Some(TokenType::Not) => "not operator",
 					Some(TokenType::CloseParen) => "closing parenthesis",
 					Some(TokenType::Colon) => "colon",
-					Some(TokenType::Error(_)) => unreachable!(),
-					Some(TokenType::String | TokenType::OpenParen) => unreachable!(), // these would have been consumed by expression2 as `tag` or the start of `OPEN_PAREN expression0 CLOSE_PAREN` respectively
+					Some(TokenType::Error(_)) => unreachable!("already checked"),
+					Some(TokenType::String | TokenType::OpenParen) => {
+						// these would have been consumed by expression2 as `tag` or the start of `OPEN_PAREN expression0 CLOSE_PAREN` respectively
+						unreachable!("parser doesn't work like that")
+					}
 				};
 				let locus = got
 					.as_ref()
