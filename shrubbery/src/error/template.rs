@@ -20,6 +20,7 @@ pub fn error_response(error: &dyn std::error::Error, status_code: StatusCode) ->
 	IntoResponse::into_response((status_code, template))
 }
 
+#[cfg(not(debug_assertions))]
 pub async fn default_handler() -> (StatusCode, impl IntoResponse) {
 	let template = Template {
 		code: 404,

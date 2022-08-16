@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use axum::response::{IntoResponse, Response};
 
 mod template;
+#[cfg(not(debug_assertions))]
 pub use template::default_handler;
 
 #[derive(Debug, thiserror::Error)]
