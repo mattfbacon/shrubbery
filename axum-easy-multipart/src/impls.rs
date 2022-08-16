@@ -7,22 +7,22 @@ use crate::fields::{Fields, FromMultipartField, FromSingleMultipartField};
 
 #[async_trait]
 impl FromSingleMultipartField for String {
-    async fn from_single_multipart_field(
-        field: Field<'_>,
-        _extensions: &http::Extensions,
-    ) -> Result<Self> {
-        Ok(field.text().await?)
-    }
+	async fn from_single_multipart_field(
+		field: Field<'_>,
+		_extensions: &http::Extensions,
+	) -> Result<Self> {
+		Ok(field.text().await?)
+	}
 }
 
 #[async_trait]
 impl FromSingleMultipartField for Bytes {
-    async fn from_single_multipart_field(
-        field: Field<'_>,
-        _extensions: &http::Extensions,
-    ) -> Result<Self> {
-        Ok(field.bytes().await?)
-    }
+	async fn from_single_multipart_field(
+		field: Field<'_>,
+		_extensions: &http::Extensions,
+	) -> Result<Self> {
+		Ok(field.bytes().await?)
+	}
 }
 
 #[macro_export]
@@ -48,20 +48,20 @@ impl_for_from_str![u8, u16, u32, u64, usize, i8, i16, i32, i64, isize, f32, f64,
 
 #[async_trait]
 impl<T: FromSingleMultipartField> FromMultipartField for Option<T> {
-    async fn from_multipart_field(
-        fields: &mut Fields<'_, '_>,
-        field_name: &str,
-        extensions: &http::Extensions,
-    ) -> Result<Self> {
-        let peeked = fields.peek().await?.ok_or(Error::UnexpectedEnd)?;
-        if peeked.name() == Some(field_name) {
-            Ok(Some(
-                T::from_single_multipart_field(fields.next().await?.unwrap(), extensions).await?,
-            ))
-        } else {
-            Ok(None)
-        }
-    }
+	async fn from_multipart_field(
+		fields: &mut Fields<'_, '_>,
+		field_name: &str,
+		extensions: &http::Extensions,
+	) -> Result<Self> {
+		let peeked = fields.peek().await?.ok_or(Error::UnexpectedEnd)?;
+		if peeked.name() == Some(field_name) {
+			Ok(Some(
+				T::from_single_multipart_field(fields.next().await?.unwrap(), extensions).await?,
+			))
+		} else {
+			Ok(None)
+		}
+	}
 }
 
 #[macro_export]
@@ -91,7 +91,7 @@ macro_rules! impl_for_default_plus_extend {
 }
 
 impl_for_default_plus_extend!(
-    Vec<T>,
-    std::collections::HashSet<T>,
-    std::collections::BTreeSet<T>
+	Vec<T>,
+	std::collections::HashSet<T>,
+	std::collections::BTreeSet<T>
 );

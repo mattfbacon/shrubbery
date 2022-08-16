@@ -78,7 +78,7 @@ impl TagRef<'_> {
 		match self {
 			Self::Name(name) => Tag::name(name),
 			Self::Category(category) => Tag::category(category),
-			Self::Both { category, name } => Tag::both(category, name).unwrap(), // we unwrap because we assume that the TagRef came from a valid Tag
+			Self::Both { category, name } => Tag::both(category, name).unwrap(), /* we unwrap because we assume that the TagRef came from a valid Tag */
 		}
 	}
 }
