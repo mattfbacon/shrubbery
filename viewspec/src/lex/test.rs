@@ -140,9 +140,9 @@ fn generate_random(num_components: usize) -> (String, Vec<SpannedToken>) {
 	let parsed = Vec::with_capacity(num_components);
 	let current_location: Location = start_whitespace.try_into().unwrap();
 	let mut generation_ctx = GenerationCtx {
-		raw,
-		parsed,
 		current_location,
+		parsed,
+		raw,
 	};
 
 	generation_ctx

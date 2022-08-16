@@ -1,6 +1,7 @@
 //! # Viewspec
 //!
-//! `viewspec` allows lexing and parsing of "viewspecs", which are configurations for filtering items based on tags.
+//! Lexing and parsing of "viewspecs", which are configurations for filtering items based on tags.
+//!
 //! The language may be extended later with properties or other features. Assuming I don't do anything stupid, those added features should always be backwards-compatible.
 
 #![warn(clippy::pedantic)]
@@ -29,11 +30,17 @@
 	unused_qualifications,
 	variant_size_differences
 )]
+#![allow(clippy::tabs_in_doc_comments)] // rustfmt formats our doc comments and we use tabs
+#![deny(unsafe_code)]
 
 pub mod lex;
 pub mod parse;
 
-/// Lex and parse in one simple function
+/// Lex and parse in one simple function.
+///
+/// # Errors
+///
+/// Returns a [`parse::Error`] variant if parsing fails.
 pub fn lex_and_parse(input: impl Iterator<Item = u8>) -> parse::Result<parse::Ast> {
 	parse::parse(lex::lex(input))
 }

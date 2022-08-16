@@ -1,3 +1,5 @@
+//! Provides the [`Extractor`] to extract [`FromMultipart`] types from requests.
+
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -10,14 +12,20 @@ use http_body::Body;
 
 use crate::{Error, FromMultipart};
 
+/// Allows extraction of a type implementing [`FromMultipart`] from a request in an Axum handler.
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Extractor<T: FromMultipart>(pub T);
 
+/// Reasons why the extractor can fail.
 #[derive(Debug, thiserror::Error)]
 pub enum Rejection {
+	/// See [Error] for reasons why this error would occur.
 	#[error(transparent)]
 	Error(Error),
+	/// Could not properly find the multipart boundary.
 	#[error("invalid multipart boundary")]
 	InvalidBoundary,
+	/// Could not get the body of the request because it was already taken by another extractor.
 	#[error("request body was already extracted")]
 	BodyAlreadyExtracted,
 }

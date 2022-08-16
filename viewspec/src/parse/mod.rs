@@ -1,11 +1,15 @@
-//! The second half of the crate: parsing the tokens into an AST.
-//! Get started with the `parse` function.
-//! Look in the `ast` module for the result of parsing, or in the `error` module for the possible errors that can occur while parsing.
+//! Parsing tokens into an AST.
+//!
+//! Get started with the [`parse`] function.
+//!
+//! Look in the [`ast`] module for the result of parsing, or in the [`error`] module for the possible errors that can occur while parsing.
 //!
 //! # Goals
-//! This parser has a goal to avoid recursion, both at the type-level (`Node`s do not contain `Box<Node>`) and in functions (parser, Debug implementation)
+//!
+//! This parser has a goal to avoid recursion, both at the type-level ([`Node`]s do not contain `Box<Node>`) and in functions (parser, Debug implementation)
 //!
 //! # Parsing Rules
+//!
 //! Screaming snake case represents tokens from the lexing stage. The entry point is `expression0`.
 //!
 //! ```text
@@ -30,12 +34,15 @@ use ast::Storage;
 pub use ast::{Ast, Key, Node};
 pub use error::Error;
 
-/// A convenience type alias with E defaulting to the parsing error type `error::Error`
-pub type Result<T, E = Error> = core::result::Result<T, E>;
+/// A convenience `Result` alias with `E` defaulting to [`Error`].
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-/// Parse a sequence of `SpannedToken` into an `Ast` or an `Error`.
+/// Parse a sequence of [`SpannedToken`] into an [`Ast`] or an [`Error`].
 ///
-/// This function takes `SpannedToken` rather than `Token` so error messages can include spans.
+/// Takes [`SpannedToken`] rather than [`Token`] so error messages can include spans.
+#[allow(clippy::missing_errors_doc)] // obvious
+#[allow(clippy::missing_panics_doc)] // those panics should not occur
+#[allow(clippy::too_many_lines)] // mostly boilerplate
 pub fn parse(input: impl Iterator<Item = SpannedToken>) -> Result<Ast> {
 	#[derive(Debug, Clone, Copy)]
 	enum Operator {

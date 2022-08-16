@@ -4,7 +4,7 @@ use syn::{Attribute, Error, Lit, LitStr, Meta, MetaList, MetaNameValue, Path};
 
 use super::Result;
 
-pub trait MetaValue: Sized {
+pub(crate) trait MetaValue: Sized {
 	fn friendly_name() -> &'static str;
 	fn extract(meta: Meta) -> Result<Self, Meta>;
 }
@@ -64,7 +64,20 @@ impl MetaValue for LitStr {
 	}
 }
 
-pub fn get<V: MetaValue>(attributes: &[Attribute], attribute_name: &str) -> Result<Option<V>> {
+pub(crate) fn get<V: MetaValue>(
+	attributes: &[Attribute],
+	attribute_name: &str,
+) -> Result<Option<V>> {
+	use syn::punctuated::Punctuated;
+
+	fn parse_meta_stream(
+		tokens: syn::parse::ParseStream<'_>,
+	) -> Result<Punctuated<Meta, syn::Token![,]>> {
+		let inner;
+		syn::parenthesized!(inner in tokens);
+		Punctuated::parse_separated_nonempty(&inner)
+	}
+
 	let mut ret = None;
 
 	for attribute in attributes {
@@ -76,14 +89,6 @@ pub fn get<V: MetaValue>(attributes: &[Attribute], attribute_name: &str) -> Resu
 			continue;
 		}
 
-		use syn::punctuated::Punctuated;
-		fn parse_meta_stream(
-			tokens: syn::parse::ParseStream,
-		) -> Result<Punctuated<Meta, syn::Token![,]>> {
-			let inner;
-			syn::parenthesized!(inner in tokens);
-			Punctuated::parse_separated_nonempty(&inner)
-		}
 		let meta_stream = syn::parse::Parser::parse2(parse_meta_stream, attribute.tokens.clone())?;
 
 		for meta in meta_stream {
@@ -119,11 +124,11 @@ pub fn get<V: MetaValue>(attributes: &[Attribute], attribute_name: &str) -> Resu
 	Ok(ret)
 }
 
-pub fn get_enum_tag(item_span: Span, attributes: &[Attribute]) -> Result<String> {
+pub(crate) fn get_enum_tag(item_span: Span, attributes: &[Attribute]) -> Result<String> {
 	let tag_name = get::<LitStr>(attributes, "tag")?.ok_or_else(|| Error::new(item_span, "enum requires \"tag\" attribute to specify the name of the field that determines which variant will be deserialized"))?;
 	Ok(tag_name.value())
 }
 
-pub fn get_rename(attributes: &[Attribute]) -> Result<Option<LitStr>> {
+pub(crate) fn get_rename(attributes: &[Attribute]) -> Result<Option<LitStr>> {
 	get::<LitStr>(attributes, "rename")
 }

@@ -1,23 +1,37 @@
-//! This module centers around `Tag` but also provides a helper enum `TagRef` and contains implementation details.
+//! Provides owned [`Tag`] and borrowed [`Ref`].
+#![allow(unsafe_code)]
 
-/// The basic node of the AST, referring to a tag within the database that files can be tagged with. A `Tag` can have a name inclusive-or a category
+/// The basic node of the AST, referring to a tag within the database that files can be tagged with.
+///
+/// Can have a name and/or a category.
 pub struct Tag(Box<TagInner>);
 
 impl Tag {
-	/// The maximum length of a category, in bytes
+	/// The maximum length of a category, in bytes.
 	pub const MAX_CATEGORY_LEN: usize = u16::MAX as usize;
 
-	/// Create a `Tag` that contains a `name`. Analogous to `TagRef::Name`
+	/// Create a [`Tag`] that contains a `name`.
+	///
+	/// Analogous to `Ref::Name`.
+	#[must_use]
 	pub fn name(name: &str) -> Self {
 		Self(TagInner::new(&[name], TagKind::Name))
 	}
 
-	/// Create a `Tag` that contains a `category`. Analogous to `TagRef::Category`
+	/// Create a [`Tag`] that contains a `category`.
+	///
+	/// Analogous to `Ref::Category`.
+	#[must_use]
 	pub fn category(category: &str) -> Self {
 		Self(TagInner::new(&[category], TagKind::Category))
 	}
 
-	/// Create a `Tag` that contains both a `category` and a `name`. Analogous to `TagRef::Both`. Returns None if `category` is too long
+	/// Create a [`Tag`] that contains both a `category` and a `name`.
+	///
+	/// Analogous to `Ref::Both`.
+	///
+	/// Returns `None` if `category` is too long.
+	#[must_use]
 	pub fn both(category: &str, name: &str) -> Option<Self> {
 		Some(Self(TagInner::new(
 			&[category, name],
@@ -27,15 +41,20 @@ impl Tag {
 		)))
 	}
 
-	/// Get a view of this `Tag` as an instance of the `TagRef` enum, which can then be matched on
-	pub fn as_ref(&self) -> TagRef<'_> {
+	/// Get a view of this [`Tag`] as an instance of the [`Ref`] enum, which can then be matched on.
+	///
+	/// This is not provided as an implementation of `AsRef` because that is a reference-to-reference conversion and this only returns a type *containing* references.
+	///
+	/// It is also not provided as an implementation of `From` because that is an owned-to-owned conversion and provides no way to modify the return type based on the lifetime of the `&self` argument.
+	#[must_use]
+	pub fn as_ref(&self) -> Ref<'_> {
 		match self.0.kind {
-			TagKind::Name => TagRef::Name(&self.0.data),
-			TagKind::Category => TagRef::Category(&self.0.data),
+			TagKind::Name => Ref::Name(&self.0.data),
+			TagKind::Category => Ref::Category(&self.0.data),
 			TagKind::Both { name_start } => {
 				let name_start = usize::from(name_start);
 				let (category, name) = self.0.data.split_at(name_start);
-				TagRef::Both { category, name }
+				Ref::Both { category, name }
 			}
 		}
 	}
@@ -61,10 +80,12 @@ impl std::fmt::Debug for Tag {
 	}
 }
 
-/// A reference to a tag, encapsulated in an enum to allow easier reference to name and category as applicable
+/// A reference to a tag.
+///
+/// Encapsulated in an enum to allow easier reference to name and category as applicable.
 #[allow(single_use_lifetimes)] // otherwise PartialEq and Eq implementations cause warnings
-#[derive(Debug, PartialEq, Eq)]
-pub enum TagRef<'a> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ref<'a> {
 	#[allow(missing_docs)]
 	Name(&'a str),
 	#[allow(missing_docs)]
@@ -73,12 +94,17 @@ pub enum TagRef<'a> {
 	Both { category: &'a str, name: &'a str },
 }
 
-impl TagRef<'_> {
-	fn to_owned(&self) -> Tag {
+impl Ref<'_> {
+	/// Convert back from [`Ref`] to [`Tag`] by cloning the data.
+	///
+	/// This is not provided as an implementation of `ToOwned` because there is a blanket impl of `ToOwned` for all implementors of `Clone`, which `Ref` implements.
+	///
+	/// This function will panic if it is a `Both` variant and the category is too long. However, this can only occur if the [`Ref`] was created from some other source than a [`Tag`], which is generally not a good idea.
+	fn to_owned(self) -> Tag {
 		match self {
 			Self::Name(name) => Tag::name(name),
 			Self::Category(category) => Tag::category(category),
-			Self::Both { category, name } => Tag::both(category, name).unwrap(), /* we unwrap because we assume that the TagRef came from a valid Tag */
+			Self::Both { category, name } => Tag::both(category, name).unwrap(), /* We unwrap because we assume that the `Ref` came from a valid `Tag`. While this won't necessarily always be the case, it is the only use case we need to worry about. */
 		}
 	}
 }
@@ -118,6 +144,7 @@ impl TagInner {
 		}
 
 		// we use the length *of the data* as the length of the slice pointer
+		#[allow(clippy::cast_ptr_alignment)] // we know the alignment is correct
 		let allocation = slice_from_raw_parts_mut(raw_allocation, data_len) as *mut TagInner;
 
 		// SAFETY:
@@ -132,7 +159,7 @@ impl TagInner {
 		let mut offset = 0;
 		for datum in data {
 			// SAFETY: since we allocated enough storage for all of the data, offsetting to the get the pointer to any datum within that data will be sound. we are offsetting in bytes so the offset can't overflow
-			let this_datum_ptr = unsafe { (addr_of_mut!((*allocation).data) as *mut u8).offset(offset) };
+			let this_datum_ptr = unsafe { addr_of_mut!((*allocation).data).cast::<u8>().offset(offset) };
 			// SAFETY:
 			// - since `src` came from `&str`, it is valid for reads of its bytes, and is properly aligned. we pass its length directly to the `count` parameter so we only read within the slice
 			// - `dst` is valid for writes and is properly aligned because `str` has no alignment requirement so will be directly after the `kind` field, meaning that by allocating enough for `TagKind` plus `data.len()`, getting the address of the string component will result in a string pointer that points to an allocation that is valid for writes of `data.len()` bytes

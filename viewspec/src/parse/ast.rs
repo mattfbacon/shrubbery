@@ -1,17 +1,21 @@
-//! This module centers around `Ast` and `Node`. Together they implement a *non-recursive* AST. To get the children of a node, you can use `Ast::resolve_key`.
+//! Provides [`Ast`] and [`Node`].
+//!
+//! Together they implement a *non-recursive* AST.
 
 use std::fmt::{self, Debug, Formatter};
 
 pub use super::tag::Tag;
 
-/// The key used to refer to other nodes in the AST
+/// The key used to refer to other nodes in the AST.
+///
+/// To resolve a key to a node, use `Ast::resolve_key`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Key(u32);
 
 /// A node in the AST.
 ///
-/// Note: Nodes do not own their children; they only contain references to them
+/// Note: Nodes do not own their children; they only contain references to them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Node {
 	/// A tag, which is only leaf node in this AST
@@ -45,7 +49,7 @@ impl Storage {
 		self
 			.0
 			.get(usize::try_from(key.0).expect("u32 is bigger than usize, ghetto platform alert"))
-			.expect("invalid key (this is an application error)")
+			.expect("invalid key (are you mixing keys between ASTs?)")
 	}
 }
 
@@ -57,17 +61,12 @@ pub struct Ast {
 
 impl Ast {
 	/// Get a reference to the root node.
-	/// Due to the nature of the AST (nodes to), it is not really possible
 	#[must_use]
 	pub fn root(&self) -> &Node {
 		&self.root
 	}
 
 	/// Resolve a reference to a node.
-	///
-	/// # Panics
-	/// This function does not return an `Option` because `Key`s can only be created internally and thus will always be valid, bugs notwithstanding.
-	/// Therefore, despite the use of `expect` within the function, it should never panic in normal usage.
 	#[must_use]
 	pub fn resolve_key(&self, key: Key) -> &Node {
 		self.storage.get(key)

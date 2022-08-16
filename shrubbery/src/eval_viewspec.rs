@@ -1,6 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 
-use viewspec::parse::tag::{Tag, TagRef};
+use viewspec::parse::tag::{Ref as TagRef, Tag};
 use viewspec::parse::{Ast, Node};
 
 use crate::database::models;

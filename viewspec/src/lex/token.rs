@@ -1,9 +1,9 @@
-//! This module centers around the `Token` type, but also declares support types useful for dealing with tokens in the context of parsing and lexing.
+//! Provides the `Token` type as well as some support types.
 
 use crate::lex::error::Error;
 use crate::lex::span::Span;
 
-/// The possible tokens returned from lexing
+/// The possible tokens returned from lexing.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token {
 	/// `&`
@@ -27,19 +27,19 @@ pub enum Token {
 		bare: bool,
 	},
 	/// An error occurred while lexing.
-	///
+	///Box
 	/// This is in the `Token` enum to make errors more pervasive but simultaneously easier to handle. It is boxed to avoid incurring overhead in the non-error cases
 	Error(Box<Error>),
 }
 
 impl Token {
-	/// Add a span to a token to create a `SpannedToken`.
+	/// Add a span to a token to create a [`SpannedToken`].
 	#[must_use]
 	pub fn with_span(self, span: Span) -> SpannedToken {
 		SpannedToken { span, token: self }
 	}
 
-	/// Get the type of the token as a `Type`
+	/// Get the type of the token<'_> as a [`Type`].
 	#[must_use]
 	pub fn into_type(self) -> Type {
 		match self {
@@ -55,7 +55,7 @@ impl Token {
 	}
 }
 
-/// A token with a span that describes where the token occurred in the input
+/// A [`Token`] with a [`Span`] that stores where the token occurred in the input.
 #[derive(Debug)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 #[allow(clippy::module_name_repetitions)]
@@ -66,8 +66,11 @@ pub struct SpannedToken {
 	pub token: Token,
 }
 
-/// A parallel enum to `Token` but without any fields. As an exception, `Error` retains its error.
-/// See `Token` for variant documentation
+/// A parallel enum to [`Token`] but without fields (except the error variant).
+///
+/// [`Error`] retains its error since it is generally needed even when just handling the token type.
+///
+/// See [`Token`] for variant documentation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(missing_docs)] // all the variants exactly match those of `Token`, which are documented
 pub enum Type {

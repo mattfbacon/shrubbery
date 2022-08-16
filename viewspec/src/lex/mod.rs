@@ -1,6 +1,8 @@
-//! The first half of the crate: parsing bytes into spanned tokens.
-//! Get started with the `lex` function.
-//! Look in the `token` module for the possible tokens after lexing, or in `error` for the possible errors that can occur while lexing.
+//! Parsing bytes into spanned tokens.
+//!
+//! Get started with the [`lex`] function.
+//!
+//! Look in the [`token`] module for the possible tokens after lexing, or in [`error`] for the possible errors that can occur while lexing.
 
 use std::iter::Peekable;
 

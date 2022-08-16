@@ -1,3 +1,34 @@
+//! The derive macro companion of `axum-easy-multipart`.
+//!
+//! All documentation is in that crate.
+
+#![warn(clippy::pedantic)]
+#![warn(
+	missing_copy_implementations,
+	elided_lifetimes_in_paths,
+	explicit_outlives_requirements,
+	macro_use_extern_crate,
+	meta_variable_misuse,
+	missing_abi,
+	missing_copy_implementations,
+	missing_debug_implementations,
+	non_ascii_idents,
+	noop_method_call,
+	pointer_structural_match,
+	single_use_lifetimes,
+	trivial_casts,
+	trivial_numeric_casts,
+	unreachable_pub,
+	unused_crate_dependencies,
+	unused_extern_crates,
+	unused_import_braces,
+	unused_lifetimes,
+	unused_macro_rules,
+	unused_qualifications,
+	variant_size_differences
+)]
+#![forbid(unsafe_code)]
+
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{format_ident, quote};
@@ -23,8 +54,8 @@ fn derive(input: DeriveInput) -> TokenStream {
 	let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
 	let implementation = match input.data {
-		Data::Struct(data) => derive_struct(input_span, data.fields, quote!(Self)),
-		Data::Enum(data) => derive_enum(&name, input.attrs, data),
+		Data::Struct(data) => derive_struct(input_span, data.fields, &quote!(Self)),
+		Data::Enum(data) => derive_enum(&name, &input.attrs, data),
 		Data::Union(_data) => Err(Error::new(
 			input_span,
 			"FromMultipart can only be derived on structs and enums",
@@ -44,9 +75,9 @@ fn derive(input: DeriveInput) -> TokenStream {
 	}
 }
 
-fn derive_struct(span: Span, fields: Fields, ident: TokenStream) -> Result<TokenStream> {
+fn derive_struct(span: Span, fields: Fields, ident: &TokenStream) -> Result<TokenStream> {
 	let body = match fields {
-		Fields::Named(fields) => derive_named_struct(fields, ident),
+		Fields::Named(fields) => derive_named_struct(&fields, ident),
 		_ => Err(Error::new(
 			span,
 			"FromMultipart may only be derived on named structs",
@@ -56,17 +87,17 @@ fn derive_struct(span: Span, fields: Fields, ident: TokenStream) -> Result<Token
 	Ok(body)
 }
 
-fn derive_named_struct(input: FieldsNamed, ident: TokenStream) -> Result<TokenStream> {
+fn derive_named_struct(input: &FieldsNamed, ident: &TokenStream) -> Result<TokenStream> {
 	let items = input.named
-        .iter()
-        .map(|field| -> Result<(_, _)> {
-            let actual_ident = field.ident.as_ref().unwrap();
-            let multipart_name = attribute::get_rename(&field.attrs)?.unwrap_or_else(|| LitStr::new(&actual_ident.to_string(), Span::call_site()));
-            let internal_ident = make_internal_ident(actual_ident);
-            let field_getter = quote! { let #internal_ident = ::axum_easy_multipart::fields::FromMultipartField::from_multipart_field(&mut fields, #multipart_name, extensions).await?; };
-            let constructor_field = quote!{ #actual_ident: #internal_ident };
-            Ok((field_getter, constructor_field))
-        }).collect::<Result<Vec<_>>>()?;
+		.iter()
+		.map(|field| -> Result<(_, _)> {
+				let actual_ident = field.ident.as_ref().unwrap();
+				let multipart_name = attribute::get_rename(&field.attrs)?.unwrap_or_else(|| LitStr::new(&actual_ident.to_string(), Span::call_site()));
+				let internal_ident = make_internal_ident(actual_ident);
+				let field_getter = quote! { let #internal_ident = ::axum_easy_multipart::fields::FromMultipartField::from_multipart_field(&mut fields, #multipart_name, extensions).await?; };
+				let constructor_field = quote!{ #actual_ident: #internal_ident };
+				Ok((field_getter, constructor_field))
+		}).collect::<Result<Vec<_>>>()?;
 	let field_getters = items.iter().map(|(field_getter, _)| field_getter);
 	let constructor_fields = items.iter().map(|(_, constructor_field)| constructor_field);
 	Ok(quote! {
@@ -75,8 +106,8 @@ fn derive_named_struct(input: FieldsNamed, ident: TokenStream) -> Result<TokenSt
 	})
 }
 
-fn derive_enum(name: &Ident, attributes: Vec<Attribute>, input: DataEnum) -> Result<TokenStream> {
-	let tag_field = attribute::get_enum_tag(input.enum_token.span(), &attributes)?;
+fn derive_enum(name: &Ident, attributes: &[Attribute], input: DataEnum) -> Result<TokenStream> {
+	let tag_field = attribute::get_enum_tag(input.enum_token.span(), attributes)?;
 
 	let name = name.to_string();
 	let mut variant_set = std::collections::HashSet::new();
@@ -92,7 +123,7 @@ fn derive_enum(name: &Ident, attributes: Vec<Attribute>, input: DataEnum) -> Res
 				return Err(Error::new(tag_name.span(), "duplicate variant tag"));
 			}
 			let ident = &variant.ident;
-			let body = derive_struct(variant.span(), variant.fields, quote!(Self::#ident))?;
+			let body = derive_struct(variant.span(), variant.fields, &quote!(Self::#ident))?;
 			Ok(quote! {
 					#tag_name => {
 							#body

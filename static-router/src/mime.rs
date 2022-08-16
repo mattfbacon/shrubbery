@@ -1,4 +1,5 @@
-pub fn ext_to_mime(ext: &str) -> Option<&'static str> {
+#[allow(clippy::too_many_lines)] // giant match block
+pub(crate) fn ext_to_mime(ext: &str) -> Option<&'static str> {
 	Some(match ext {
 		"123" => "application/vnd.lotus-1-2-3",
 		"3dml" => "text/vnd.in3d.3dml",
@@ -258,8 +259,7 @@ pub fn ext_to_mime(ext: &str) -> Option<&'static str> {
 		"jlt" => "application/vnd.hp-jlyt",
 		"jnlp" => "application/x-java-jnlp-file",
 		"joda" => "application/vnd.joost.joda-archive",
-		"jpeg" => "image/jpeg",
-		"jpg" => "image/jpeg",
+		"jpeg" | "jpg" => "image/jpeg",
 		"jpgv" => "video/jpeg",
 		"jpm" => "video/jpm",
 		"js" => "application/javascript",
@@ -307,8 +307,7 @@ pub fn ext_to_mime(ext: &str) -> Option<&'static str> {
 		"mfm" => "application/vnd.mfmp",
 		"mgp" => "application/vnd.osgeo.mapguide.package",
 		"mgz" => "application/vnd.proteus.magazine",
-		"mid" => "audio/midi",
-		"midi" => "audio/midi",
+		"mid" | "midi" => "audio/midi",
 		"mif" => "application/vnd.mif",
 		"mj2" => "video/mj2",
 		"mjs" => "text/javascript",
