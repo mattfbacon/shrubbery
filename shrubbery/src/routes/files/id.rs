@@ -293,12 +293,9 @@ pub async fn post_handler(
 }
 
 pub fn configure() -> Router {
-	let mut app = Router::new();
+	let mut router = Router::new();
 
-	app = app.route(
-		"/:file_id",
-		axum::routing::get(get_handler).post(post_handler),
-	);
+	router = router.route("/", axum::routing::get(get_handler).post(post_handler));
 
-	app
+	router
 }
