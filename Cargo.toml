@@ -1,0 +1,8 @@
+[workspace]
+members = [
+	"axum-easy-multipart",
+	"axum-easy-multipart-derive",
+	"shrubbery",
+	"static-router",
+	"viewspec",
+]
