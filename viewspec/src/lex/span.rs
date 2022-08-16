@@ -61,11 +61,11 @@ impl Span {
 		let start = self.start.try_into().unwrap();
 		let end = self.end.try_into().unwrap();
 
-		if !s.is_char_boundary(start) || !s.is_char_boundary(end) || s.len() < end || start > end {
+		if !s.is_char_boundary(start) || !s.is_char_boundary(end) || s.len() <= end || start > end {
 			return None;
 		}
 		let (before, within_and_after) = s.split_at(start);
-		let (within, after) = within_and_after.split_at(end - start);
+		let (within, after) = within_and_after.split_at(self.len().try_into().unwrap());
 
 		Some((before, within, after))
 	}
