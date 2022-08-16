@@ -13,22 +13,23 @@
 <form method="get">
 	<input type="hidden" name="page_size" value="{{page_size}}" />
 	<label for="search">Query:</label>
-	<input type="search" id="search" name="search" placeholder="tag & !other tag" required {% if let Some((raw, _)) = search_results.as_ref() %}value="{{raw}}"{% endif %} />
-	{% if let Some((raw, Err(error))) = search_results %}{{error.render(raw.as_str())|safe}}{% endif %}
+	<input type="search" id="search" name="search" placeholder="tag & !other tag" required {% if let Some(SearchResults { query, results: _ }) = search_results.as_ref() %}value="{{query}}"{% endif %} />
+	{% if let Some(SearchResults { query, results: Err(error) }) = search_results %}{{error.render(query.as_str())|safe}}{% endif %}
 	<input type="submit" value="Search" />
 </form>
 
-{% if let Some((raw, Ok(search_results))) = search_results -%}
+{% if let Some(SearchResults { query, results: Ok(results) }) = search_results -%}
 	<ul>
-		{% for (id, name) in search_results -%}
+		{% for EvaluateItem { id, name } in results -%}
 			<li><a href="/files/{{id}}">{{name}}</a></li>
 		{%- endfor %}
 	</ul>
 
 	{# I would compare inside `map` but can't use closures due to the pipe character #}
-	{% if i64::try_from(search_results.len()).unwrap_or(i64::MAX) >= page_size -%}
-		{%- if let Some((last_id, _)) = search_results.last() -%}
+	{% if i64::try_from(results.len()).unwrap_or(i64::MAX) >= page_size -%}
+		{%- if let Some(EvaluateItem { id: last_id, name: _ }) = results.last() -%}
 			<form method="get">
+				<input type="hidden" name="search" value="{{query}}">
 				<input type="hidden" name="after" value="{{last_id}}" />
 				<input type="hidden" name="page_size" value="{{page_size}}" />
 				<input type="submit" value="Next Page" />

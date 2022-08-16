@@ -5,14 +5,20 @@ use axum::{extract, Router};
 
 use crate::database::{models, Database};
 use crate::error;
+use crate::eval_viewspec::{self, EvaluateItem};
 use crate::helpers::auth;
 use crate::helpers::viewspec::{Error as ViewSpecError, ViewSpecOrError};
+
+struct SearchResults {
+	query: String,
+	results: Result<Vec<EvaluateItem>, ViewSpecError>,
+}
 
 #[derive(askama::Template)]
 #[template(path = "index.html")]
 struct Template {
 	self_user: models::User,
-	search_results: Option<(String, Result<Vec<(models::FileId, String)>, ViewSpecError>)>,
+	search_results: Option<SearchResults>,
 	page_size: i64,
 }
 crate::helpers::impl_into_response!(Template);
@@ -40,15 +46,21 @@ pub async fn get_handler(
 			raw,
 			parsed: Ok(viewspec),
 		}) => {
-			let results = crate::eval_viewspec::evaluate(&viewspec, &*database, after, page_size)
+			let results = eval_viewspec::evaluate(&viewspec, &*database, after, page_size)
 				.await
 				.map_err(error::Sqlx)?;
-			Some((raw, Ok(results)))
+			Some(SearchResults {
+				query: raw,
+				results: Ok(results),
+			})
 		}
 		Some(ViewSpecOrError {
 			raw,
 			parsed: Err(error),
-		}) => Some((raw, Err(error))),
+		}) => Some(SearchResults {
+			query: raw,
+			results: Err(error),
+		}),
 		None => None,
 	};
 

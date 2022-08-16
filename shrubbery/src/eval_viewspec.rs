@@ -150,12 +150,18 @@ fn make_query(viewspec: &Ast, after: Option<models::FileId>, limit: i64) -> (Str
 	(query, bindings)
 }
 
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct EvaluateItem {
+	pub id: models::FileId,
+	pub name: String,
+}
+
 pub async fn evaluate(
 	viewspec: &Ast,
 	database: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
 	after: Option<models::FileId>,
 	page_size: i64,
-) -> sqlx::Result<Vec<(models::FileId, String)>> {
+) -> sqlx::Result<Vec<EvaluateItem>> {
 	let (query, bindings) = make_query(viewspec, after, page_size);
 	let mut query = sqlx::query_as(&query);
 	for binding in bindings.as_values() {
