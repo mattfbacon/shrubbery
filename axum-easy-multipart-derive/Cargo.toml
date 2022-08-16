@@ -1,7 +1,8 @@
 [package]
+edition = "2021"
+license = "MIT OR Apache"
 name = "axum-easy-multipart-derive"
 version = "0.1.0"
-edition = "2021"
 
 [lib]
 proc-macro = true

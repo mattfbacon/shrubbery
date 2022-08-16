@@ -1,7 +1,8 @@
 [package]
+edition = "2021"
+license = "MIT OR Apache"
 name = "axum-easy-multipart"
 version = "0.1.0"
-edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
