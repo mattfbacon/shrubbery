@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt::{self, Display, Formatter};
 
 use serde::{Deserialize, Deserializer};
@@ -40,54 +41,34 @@ impl Error {
 			}
 		}
 
-		write!(f, "<pre class=\"error-block\"><code>")?;
-		match &self.0 {
-			parse::Error::CategoryTooLong(span) => {
-				let (before, within, after) = span.split_three(raw).unwrap();
-				writeln!(
-					f,
-					"<strong><span class=\"error-block__error\">error</span>: category is too long</strong>"
-				)?;
-				writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				write!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">{carets}</span>{}</span>{}",
-					escape(before),
-					escape(within),
-					escape(after),
-					carets = Carets(span.len()),
-				)?;
-			}
-			parse::Error::ExpectedTagGot(Some((_span, TokenType::Error(ref error)))) => match &**error {
-				lex::Error::StringEnd => {
-					writeln!(
-						f,
-						"<strong><span class=\"error-block__error\">error</span>: unexpected end of input</strong>"
-					)?;
-					writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-					write!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-					writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ more input needed here</span>&nbsp;</span>", escape(raw))?;
-				}
-				lex::Error::InvalidEscape(span, reason) => {
-					let (before, within, after) = span.split_three(raw).unwrap();
+		#[derive(Clone, Copy)]
+		enum ErrorLocus {
+			Span(Span),
+			AfterEnd,
+		}
 
-					writeln!(
-						f,
-						"<strong><span class=\"error-block__error\">error</span>: invalid string escape</strong>"
-					)?;
-					writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-					write!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-					writeln!(
-						f,
-						"{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">{carets} {reason}</span>{}</span>{}",
-						escape(before),
-						escape(within),
-						escape(after),
-						carets = Carets(span.len()),
-					)?;
-				}
-				lex::Error::StringNotUtf8(..) => unreachable!(), // we already read (past) it as a string
+		use lex::Error as LE;
+		use parse::Error as PE;
+		let (message, locus, locus_message): (
+			Cow<'static, str>,
+			ErrorLocus,
+			Option<Cow<'static, str>>,
+		) = match &self.0 {
+			PE::CategoryTooLong(span) => ("category is too long".into(), ErrorLocus::Span(*span), None),
+			PE::ExpectedTagGot(Some((_span, TokenType::Error(error)))) => match &**error {
+				LE::StringEnd => (
+					"unexpected end of input".into(),
+					ErrorLocus::AfterEnd,
+					Some("more input needed here".into()),
+				),
+				LE::InvalidEscape(span, reason) => (
+					"invalid string escape".into(),
+					ErrorLocus::Span(*span),
+					Some(reason.to_string().into()),
+				),
+				LE::StringNotUtf8(..) => unreachable!(),
 			},
-			parse::Error::ExpectedTagGot(got) => {
+			PE::ExpectedTagGot(got) => {
 				let got_name = match got.as_ref().map(|(_span, ty)| ty) {
 					None => "EOF",
 					Some(TokenType::And) => "and operator",
@@ -98,45 +79,42 @@ impl Error {
 					Some(TokenType::Error(_)) => unreachable!(),
 					Some(TokenType::String | TokenType::OpenParen) => unreachable!(), // these would have been consumed by expression2 as `tag` or the start of `OPEN_PAREN expression0 CLOSE_PAREN` respectively
 				};
-				writeln!(
-					f,
-					"<strong><span class=\"error-block__error\">error</span>: expected tag, got {got_name}</strong>"
-				)?;
-				writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				write!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				if let Some((span, _ty)) = got {
-					let (before, within, after) = span.split_three(raw).unwrap();
-					writeln!(
-						f,
-						"{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">{carets} expected tag here</span>{}</span>{}",
-						escape(before),
-						escape(within),
-						escape(after),
-						carets = Carets(span.len()),
-					)?;
-				} else {
-					writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ expected tag here</span>&nbsp;</span>", escape(raw))?;
-				}
+				let locus = got
+					.as_ref()
+					.map(|(span, _ty)| *span)
+					.map_or(ErrorLocus::AfterEnd, ErrorLocus::Span);
+				(
+					format!("expected tag, got {got_name}").into(),
+					locus,
+					Some("expected tag here".into()),
+				)
 			}
-			parse::Error::UnclosedParenthesis { open_location } => {
-				let (before, within, after) = Span::single(*open_location).split_three(raw).unwrap();
-				writeln!(
-					f,
-					"<strong><span class=\"error-block__error\">error</span>: unclosed parenthesis</strong>"
-				)?;
-				writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				write!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-				writeln!(f, "{}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">^ this opening parenthesis is not closed</span>{}</span>{}",
-					escape(before),
-					escape(within),
-					escape(after),
-				)?;
-			}
+			PE::UnclosedParenthesis { open_location } => (
+				"unclosed parenthesis".into(),
+				ErrorLocus::Span(Span::single(*open_location)),
+				Some("this opening parenthesis is not closed".into()),
+			),
+		};
+
+		let ((before, within, after), len) = match locus {
+			ErrorLocus::Span(span) => (span.split_three(raw).unwrap(), span.len()),
+			ErrorLocus::AfterEnd => ((raw, " ", ""), 1),
+		};
+		let carets = Carets(len);
+		let pipe = "<b class=\"error-block__note\"> | </b>";
+
+		writeln!(f, "<pre class=\"error-block\"><code><strong><span class=\"error-block__error\">error</span>: {message_e}</strong>", message_e = escape(&message))?;
+		write!(f, "{pipe}\n{pipe}{before_e}<span class=\"error-block__comment-span\"><span class=\"error-block__comment error-block__error\">{carets}", before_e = escape(before))?;
+		if let Some(locus_message) = locus_message {
+			write!(f, " {}", escape(&locus_message))?;
 		}
-		for _ in 0..2 {
-			writeln!(f, "<b class=\"error-block__note\">&nbsp;|&nbsp;</b>")?;
-		}
-		writeln!(f, "</code></pre>")?;
+		writeln!(
+			f,
+			"</span>{within_e}</span>{after_e}",
+			within_e = escape(within),
+			after_e = escape(after)
+		)?;
+		writeln!(f, "{pipe}\n{pipe}\n</code></pre>")?;
 		Ok(())
 	}
 }
