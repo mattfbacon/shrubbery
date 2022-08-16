@@ -84,7 +84,7 @@ impl super::token::Type {
 						}
 						.with_span(Span {
 							start: start_location,
-							end: *current_location,
+							end: *current_location - 1,
 						}),
 					);
 				} else {
@@ -109,7 +109,7 @@ impl super::token::Type {
 						}
 						.with_span(Span {
 							start: start_location,
-							end: *current_location,
+							end: *current_location - 1,
 						}),
 					);
 				}
