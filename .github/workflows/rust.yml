@@ -10,6 +10,7 @@
           "steps":
             [
               { "uses": "actions/checkout@v3" },
+              { "uses": "Swatinem/rust-cache@v2" },
               {
                 "name": "Set up toolchain",
                 "run": "rustup toolchain install nightly --component rustfmt",
@@ -27,6 +28,7 @@
           "steps":
             [
               { "uses": "actions/checkout@v3" },
+              { "uses": "Swatinem/rust-cache@v2" },
               {
                 "name": "Set up toolchain",
                 "run": "rustup component add clippy",
@@ -41,6 +43,7 @@
           "steps":
             [
               { "uses": "actions/checkout@v3" },
+              { "uses": "Swatinem/rust-cache@v2" },
               { "name": "Run tests", "run": "cargo test" },
             ],
         },
