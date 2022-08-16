@@ -4,6 +4,11 @@ use std::ops::Add;
 use serde::{Deserialize, Serialize};
 use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
 
+pub const DATE_FORMAT: &[time::format_description::FormatItem<'static>] =
+	time::macros::format_description!("[year]-[month]-[day]");
+pub const TIME_FORMAT: &[time::format_description::FormatItem<'static>] =
+	time::macros::format_description!("[hour]:[minute]:[second].[subsecond digits:1+]");
+
 /// Enforces UTC
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(from = "OffsetDateTime")]
@@ -32,10 +37,7 @@ impl Timestamp {
 
 		impl Display for Helper {
 			fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-				self
-					.0
-					.format_into(&mut FmtToIo(f), html_date::FORMAT)
-					.unwrap();
+				self.0.format_into(&mut FmtToIo(f), DATE_FORMAT).unwrap();
 				Ok(())
 			}
 		}
@@ -162,10 +164,7 @@ impl Time {
 
 		impl Display for Helper {
 			fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-				self
-					.0
-					.format_into(&mut FmtToIo(f), html_time::FORMAT)
-					.unwrap();
+				self.0.format_into(&mut FmtToIo(f), TIME_FORMAT).unwrap();
 				Ok(())
 			}
 		}
@@ -198,90 +197,6 @@ impl<F: fmt::Write> std::io::Write for FmtToIo<F> {
 
 	fn flush(&mut self) -> std::io::Result<()> {
 		Ok(())
-	}
-}
-
-/// for `#[serde(with)]`
-pub mod html_date {
-	#![allow(clippy::trivially_copy_pass_by_ref)] // needed to provide the serde interface
-	use std::fmt::{self, Display, Formatter};
-
-	use serde::de::{self, Deserialize, Deserializer};
-	use serde::ser::Serializer;
-
-	use super::Date;
-
-	pub const FORMAT: &[time::format_description::FormatItem<'static>] =
-		time::macros::format_description!("[year]-[month]-[day]");
-
-	pub fn format(date: Date) -> impl Display {
-		struct Helper(Date);
-
-		impl Display for Helper {
-			fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-				let date = self.0;
-				let mut writer = super::FmtToIo(formatter);
-				date.format_into(&mut writer, FORMAT).unwrap();
-				Ok(())
-			}
-		}
-
-		Helper(date)
-	}
-
-	pub fn serialize<S: Serializer>(&date: &Date, serializer: S) -> Result<S::Ok, S::Error> {
-		serializer.collect_str(&format(date))
-	}
-
-	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Date, D::Error>
-	where
-		D::Error: de::Error,
-	{
-		let raw = <std::borrow::Cow<'_, str>>::deserialize(deserializer)?;
-		Ok(Date::parse(&raw, FORMAT).map_err(de::Error::custom)?)
-	}
-}
-
-/// for `#[serde(with)]`
-pub mod html_time {
-	#![allow(clippy::trivially_copy_pass_by_ref)] // needed to provide the serde interface
-	use std::fmt::{self, Display, Formatter};
-
-	use serde::de::{self, Deserialize, Deserializer};
-	use serde::ser::Serializer;
-
-	use super::Time;
-
-	pub static FORMAT: &[time::format_description::FormatItem<'static>] =
-		time::macros::format_description!("[hour]:[minute]:[second].[subsecond digits:1+]");
-	pub fn format(time: Time) -> impl Display {
-		struct Helper(time::Time);
-
-		impl Display for Helper {
-			fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-				self
-					.0
-					.format_into(&mut super::FmtToIo(formatter), FORMAT)
-					.unwrap();
-				Ok(())
-			}
-		}
-
-		Helper(time.0)
-	}
-
-	pub fn serialize<S: Serializer>(&time: &Time, serializer: S) -> Result<S::Ok, S::Error> {
-		serializer.collect_str(&format(time))
-	}
-
-	pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Time, D::Error>
-	where
-		D::Error: de::Error,
-	{
-		let raw = <std::borrow::Cow<'_, str>>::deserialize(deserializer)?;
-		time::Time::parse(&raw, FORMAT)
-			.map(Time)
-			.map_err(de::Error::custom)
 	}
 }
 
