@@ -20,6 +20,7 @@
 )]
 #![forbid(unsafe_code)]
 
+use std::process::{ExitCode, Termination};
 use std::sync::Arc;
 
 use axum::Extension;
@@ -48,8 +49,27 @@ pub enum Error {
 	CreateFileStorage(#[source] std::io::Error),
 }
 
+struct ErrorReturn(Result<(), Error>);
+
+impl Termination for ErrorReturn {
+	fn report(self) -> ExitCode {
+		match self.0 {
+			Ok(()) => ExitCode::SUCCESS,
+			Err(error) => {
+				use std::io::Write as _;
+				let _ = writeln!(std::io::stderr(), "{error}");
+				ExitCode::FAILURE
+			}
+		}
+	}
+}
+
+fn main() -> ErrorReturn {
+	ErrorReturn(main_())
+}
+
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main_() -> Result<(), Error> {
 	let config = config::config()?;
 
 	if !config.file_storage.exists() {
