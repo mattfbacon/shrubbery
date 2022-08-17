@@ -1,0 +1,1766 @@
+{
+  "db": "PostgreSQL",
+  "02ebf1cd088cd36e21a54215bce87b61c7e5bc31ec099ad3208e7edf06a801de": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          },
+          "Int8"
+        ]
+      }
+    },
+    "query": "UPDATE files SET name = $1, description = $2, media_type = $3 WHERE id = $4"
+  },
+  "0b05288839147dae9e82a0c29f49643420f1d9266647f73b9297631730b4e589": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int4",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE file_tags SET file = $1, tag = $2 WHERE id = $3"
+  },
+  "0d3b8019d008683802e3e6d8b8f10bedd7148852c71ae5bc03de964db94b4b7b": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "viewer",
+                  "editor",
+                  "admin"
+                ]
+              },
+              "name": "user_role"
+            }
+          },
+          "Timestamptz",
+          "Timestamptz",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE users SET username = $1, password = $2, email = $3, role = $4, created_time = $5, last_login = $6 WHERE id = $7"
+  },
+  "15afe0bef059a577f9f29babc79c3cf9e1d36d8842fa39fedea1ef6afbc71f5c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "category?",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "present!",
+          "ordinal": 3,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT tags.id, tags.name, tag_categories.name as \"category?\", (SELECT count(*) > 0 FROM file_tags WHERE tag = tags.id AND file = $1) as \"present!\" FROM tags LEFT JOIN tag_categories ON tags.category = tag_categories.id ORDER BY category NULLS FIRST, name"
+  },
+  "1d10153f33185b1a040a1c21cce96264af3c0201666bbb1b48f0f3630d1beb4a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "DELETE FROM file_tags WHERE id = $1"
+  },
+  "1d37ee8c3aafb9aa820b84d607304f4d0903c29eb09a8d8745fc776281a5019c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Bpchar"
+              },
+              "name": "color"
+            }
+          },
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO tag_categories (name, description, color, created_by) VALUES ($1, $2, $3, $4) RETURNING id, created_time AS \"created_time: _\""
+  },
+  "1edf705781e8fea4530e9f97c15fe066d28f6af0e08b2c908f36db5b7eed349f": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE users SET username = $1 WHERE id = $2"
+  },
+  "2108d86d76a63c1bf49a3045dbccc8a487175b331c2b85c0db2b5a194535855e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT count(*) as \"count!\" FROM tags"
+  },
+  "271b7ffcd59cac7920e8c9bb87c0b144ab7a26ff0fbc123dc30b3a1ca22a199e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "color: _",
+          "ordinal": 3,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 5,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT id, name, description, color AS \"color: _\", created_time AS \"created_time: _\", created_by FROM tag_categories"
+  },
+  "28e25e83b13d858a743fc7168337f6114dc5e984f06dfd395a507338f45aabab": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "color: _",
+          "ordinal": 3,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 5,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT id, name, description, color AS \"color: _\", created_time AS \"created_time: _\", created_by FROM tag_categories LIMIT $1 OFFSET $2"
+  },
+  "3038c8e12ce70b0e550409c303e1af5a7997b4f5cbd31f79e058a6fde96b5495": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "username",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "password: _",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "role: _",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "viewer",
+                  "editor",
+                  "admin"
+                ]
+              },
+              "name": "user_role"
+            }
+          }
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "last_login: _",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT id, username, password AS \"password: _\", email, role AS \"role: _\", created_time AS \"created_time: _\", last_login AS \"last_login: _\" FROM users WHERE id = $1"
+  },
+  "3122500f78dcb6fb7786694e2c74aa11f1034611c8c0b9d0da0ab2851b6ac488": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "file",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "tag",
+          "ordinal": 2,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT id, file, tag FROM file_tags WHERE id = $1"
+  },
+  "34fe8e9ecb68f9d6ae0281a6cfb5f082ace2337905feb96b7588305476bafa09": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "viewer",
+                  "editor",
+                  "admin"
+                ]
+              },
+              "name": "user_role"
+            }
+          },
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE users SET role = $1 WHERE id = $2"
+  },
+  "3d79dee054665639644221a96cd3ce80a74a570d77d23e42dba81d188a461b64": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "color: models::Color",
+          "ordinal": 3,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "created_time: crate::timestamp::Timestamp",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as \"color: models::Color\", tag_categories.created_time as \"created_time: crate::timestamp::Timestamp\", (SELECT name FROM users WHERE id = tag_categories.created_by) as created_by FROM tag_categories WHERE id = $1"
+  },
+  "3d7a1c9a937aeabd9fa780c4108b9a8d936552422ea55173890dc3c6dd7b3a85": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "color: models::Color",
+          "ordinal": 3,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "created_time: crate::timestamp::Timestamp",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by?",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT tag_categories.id, tag_categories.name, tag_categories.description, tag_categories.color as \"color: models::Color\", tag_categories.created_time as \"created_time: crate::timestamp::Timestamp\", users.username as \"created_by?\" FROM tag_categories LEFT JOIN users ON tag_categories.created_by = users.id ORDER BY tag_categories.id OFFSET $1 LIMIT $2"
+  },
+  "3e55e617e8735095b58e0fc37a94b5d03e18467fdce36ed3ca1cf76855808ee7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "media_type: models::MediaType",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Varchar",
+          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          }
+        ]
+      }
+    },
+    "query": "UPDATE files SET name = $2, description = $3, media_type = $4 WHERE id = $1 RETURNING id, name, description, media_type as \"media_type: models::MediaType\""
+  },
+  "4105ab6ba1ac4095eb85634f9ceaee54357ed67005992f1b58912d20f50f6999": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "category",
+          "ordinal": 3,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 5,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT id, name, description, category, created_time AS \"created_time: _\", created_by FROM tags"
+  },
+  "42ca0e10aabd4368dcce810a3cdfd9ffd4c4684c73433a302cc486ce0a66eeb7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "media_type: _",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT id, name, description, media_type AS \"media_type: _\" FROM files LIMIT $1 OFFSET $2"
+  },
+  "4772235bc1b44cd968aee7c68b76293d9ced3c34855d633bff0f9601553876e0": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Bpchar"
+              },
+              "name": "color"
+            }
+          },
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE tag_categories SET color = $1 WHERE id = $2"
+  },
+  "4cf19a5169d7f7291cb5ec740dc8eeaee4b891fa13657e81ad37716f78581ed0": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int4Array"
+        ]
+      }
+    },
+    "query": "INSERT INTO file_tags (file, tag) (SELECT $1 as file, unnest as tag FROM unnest(cast($2 as int[])))"
+  },
+  "50293c2e54af11d4c2a553e29b671cef087a159c6ee7182d8ca929ecb748f3b7": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "DELETE FROM users WHERE id = $1"
+  },
+  "50597fb1253aaa2d87ccd349880f2207138be083cd0b8f1a21001e954422f1f3": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE tag_categories SET description = $1 WHERE id = $2"
+  },
+  "588867a562add9b032ff481b3a1d504d09aa634b26d733790747aedc24a349ba": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT id, name FROM tag_categories"
+  },
+  "5997fc78dafeea564b526aab52428ac990e15424db738a4d3d6dffb0bfe5aae5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "media_type: _",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT id, name, description, media_type AS \"media_type: _\" FROM files"
+  },
+  "5b0e94437bf2c594a85025ed08677060e7b47760bf287c20079b5e4e0159a039": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "role: _",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "viewer",
+                  "editor",
+                  "admin"
+                ]
+              },
+              "name": "user_role"
+            }
+          }
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "last_login: _",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING id, role AS \"role: _\", created_time AS \"created_time: _\", last_login AS \"last_login: _\""
+  },
+  "5e08bea7f668f33b62d8eb4173de24252eb5df1d0afe81c4b2e060d8022b5a3b": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Varchar",
+          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Bpchar"
+              },
+              "name": "color"
+            }
+          }
+        ]
+      }
+    },
+    "query": "UPDATE tag_categories SET name = $2, description = $3, color = $4 WHERE id = $1"
+  },
+  "639a1fc2768a2552b1011d6473ed7ec40854e40915fef35fa6511ffca70f2b8d": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT count(*) as \"count!\" FROM users"
+  },
+  "6c45f927ea8209b9f013801044b1ccd7a7c34b3d0875856bcec5cd9f81ce45ae": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "file",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "tag",
+          "ordinal": 2,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT id, file, tag FROM file_tags LIMIT $1 OFFSET $2"
+  },
+  "6dd77657f8e8395ddbfb4cf7d61063a6f35b51b7107158c96e52321106b2a733": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO file_tags (file, tag) VALUES ($1, $2) RETURNING id"
+  },
+  "72806dd6db8268c304e9e74638f0df5ccaca7a1306673d7a8388cddbbaf82434": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Int4",
+          "Int4"
+        ]
+      }
+    },
+    "query": "INSERT INTO tags (name, description, category, created_by) VALUES ($1, $2, $3, $4) RETURNING id, created_time AS \"created_time: _\""
+  },
+  "7332fbdcce19ebfd457d73302777c7a22f9fbe480a07ebe55c2fca689725d4da": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE users SET password = $1 WHERE id = $2"
+  },
+  "7352ba8440179b72c224ea0972b98a7cc48295f05e2e6f7b7df9cb67bca17130": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE tag_categories SET name = $1 WHERE id = $2"
+  },
+  "814ab95746c652c322c07187c7749562605a7f6b37bec9fdb227aee685a03160": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "category?",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "created_time: crate::timestamp::Timestamp",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by?",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT tags.id, tags.name, tags.description, tag_categories.name as \"category?\", tags.created_time as \"created_time: crate::timestamp::Timestamp\", users.username as \"created_by?\" FROM tags LEFT JOIN users ON tags.created_by = users.id LEFT JOIN tag_categories ON tags.category = tag_categories.id ORDER BY tags.id OFFSET $1 LIMIT $2"
+  },
+  "90811ded5f99bf20303e884d3589c507a803d22d2cb24156d111112ea39356c9": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "category",
+          "ordinal": 3,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 5,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT id, name, description, category, created_time AS \"created_time: _\", created_by FROM tags WHERE id = $1"
+  },
+  "9251a3e4d9598c3e927ab3e9999975f5d90eb4af0d3967e2ac6a32f9c4310b80": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "category",
+          "ordinal": 3,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_time: crate::timestamp::Timestamp",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        true,
+        false,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT tags.id, tags.name, tags.description, tags.category, tags.created_time as \"created_time: crate::timestamp::Timestamp\", (SELECT name FROM users WHERE id = tags.id) as created_by FROM tags WHERE id = $1"
+  },
+  "968d7c12401091f323e2a7048e38fa8b3e8fda9b0bbceceeb0ac035b68ff0ec6": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "DELETE FROM files WHERE id = $1"
+  },
+  "98a1b2701d5b4854337b6aa380121750bf0584784fa5d35f1b361964809bf899": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Timestamptz",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE users SET last_login = $1 WHERE id = $2"
+  },
+  "990ebf2c3b4bb820d7f9f727d867a0b1b9316ab29e0947174ea2b4e1dcd8976a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Int4",
+          "Timestamptz",
+          "Int4",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE tags SET name = $1, description = $2, category = $3, created_time = $4, created_by = $5 WHERE id = $6"
+  },
+  "a38d8ba1804b1e1172f3ab9df0cf9a97cd21fcac8a6de5f6efd5ce2583b8d9ba": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "username",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "password: _",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "role: _",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "viewer",
+                  "editor",
+                  "admin"
+                ]
+              },
+              "name": "user_role"
+            }
+          }
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "last_login: _",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT id, username, password AS \"password: _\", email, role AS \"role: _\", created_time AS \"created_time: _\", last_login AS \"last_login: _\" FROM users LIMIT $1 OFFSET $2"
+  },
+  "b8650149bfa0b43433392e239df65df5afd746123d42058bffb06c0f3fc20a83": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          }
+        ]
+      }
+    },
+    "query": "INSERT INTO files (name, description, media_type) VALUES ($1, $2, $3) RETURNING id"
+  },
+  "c1b8c1c668b775b42941c281cc54df398ce576b75715e9d3d42bf6835f72c005": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "username",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "password: _",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "role: _",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "viewer",
+                  "editor",
+                  "admin"
+                ]
+              },
+              "name": "user_role"
+            }
+          }
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "last_login: _",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT id, username, password AS \"password: _\", email, role AS \"role: _\", created_time AS \"created_time: _\", last_login AS \"last_login: _\" FROM users"
+  },
+  "c2e498b41e07ebceebf034e675d64a15325f9badbd2aee014ea96f97cd09f3c4": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "media_type: _",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT id, name, description, media_type AS \"media_type: _\" FROM files WHERE id = $1"
+  },
+  "c674cd2c220ebec81eb7b0fc6de4a7a0ccbd7fb41e9d5df5c220c35813df6147": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "media_type: models::MediaType",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "image",
+                  "video"
+                ]
+              },
+              "name": "file_media_type"
+            }
+          }
+        ]
+      }
+    },
+    "query": "UPDATE files SET media_type = $2 WHERE id = $1 RETURNING id, name, description, media_type as \"media_type: models::MediaType\""
+  },
+  "cbfaef4567ba453ae105cee9b123f73cf7e5dc767a2e0e14e80224b0a3e5ab8a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "category",
+          "ordinal": 3,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 5,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT id, name, description, category, created_time AS \"created_time: _\", created_by FROM tags LIMIT $1 OFFSET $2"
+  },
+  "d20fd0081cb17e62c8aa52f802b54d9f49ec3a955e275f6e901fbae868cea6f6": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Bpchar"
+              },
+              "name": "color"
+            }
+          },
+          "Timestamptz",
+          "Int4",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE tag_categories SET name = $1, description = $2, color = $3, created_time = $4, created_by = $5 WHERE id = $6"
+  },
+  "d33b4d695fa0d7cd6ceb80eda12c57bfe3375e7d7ebc6138a5fa0100b9fea89c": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "DELETE FROM tag_categories WHERE id = $1"
+  },
+  "d649f5bdf5ed6c42d89c2e68221e41fb7d9f08dfd8f5e0bc15086b7400cda1f1": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT count(*) as \"count!\" FROM tag_categories"
+  },
+  "d7f7e8f0dd853ec1a64c950bab77d695d30cbd7a664ef2dc81f94ed6c26cb8db": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE users SET email = $1 WHERE id = $2"
+  },
+  "d83be8cd968723eab7f42bad256c741c65f4fab93ed5ddc0e3f2e4eefeeb55b4": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "file",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "tag",
+          "ordinal": 2,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT id, file, tag FROM file_tags"
+  },
+  "da352e6426fc5903774334b09cb862788a7f4d20a56d309cdf02bc9b21955be7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "username",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "password: _",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "role: _",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "viewer",
+                  "editor",
+                  "admin"
+                ]
+              },
+              "name": "user_role"
+            }
+          }
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "last_login: _",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT id, username, password AS \"password: _\", email, role AS \"role: _\", created_time AS \"created_time: _\", last_login AS \"last_login: _\" FROM users WHERE username = $1"
+  },
+  "dc11174b032d020870878d4f74c5d2d829a212aaeb455cf83c3a4b3fba9b536a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Varchar",
+          "Varchar",
+          "Int4"
+        ]
+      }
+    },
+    "query": "UPDATE tags SET name = $2, description = $3, category = $4 WHERE id = $1"
+  },
+  "dd0d0e3fd03f130aab947d13580796eee9a786e2ca01d339fd0e8356f8ad3824": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "DELETE FROM tags WHERE id = $1"
+  },
+  "e12c64646e2382e6afa22b5222af504d9bb82c7d98b05d9adc802f5543b84029": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "DELETE FROM file_tags WHERE file = $1"
+  },
+  "e3bc28f504774c5aadb0491cb9c7ce6261fde717cdaeda31828fb88eb5da6677": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "color: _",
+          "ordinal": 3,
+          "type_info": "Bpchar"
+        },
+        {
+          "name": "created_time: _",
+          "ordinal": 4,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "created_by",
+          "ordinal": 5,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT id, name, description, color AS \"color: _\", created_time AS \"created_time: _\", created_by FROM tag_categories WHERE id = $1"
+  }
+}
