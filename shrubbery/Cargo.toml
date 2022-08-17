@@ -36,7 +36,7 @@ viewspec = { path = "../viewspec" }
 ormx = { git = "https://github.com/mattfbacon/ormx", rev = "ae3e6995a28c0a9da529a67f26bc0ac5425e4f4b", features = [
 	"postgres",
 ] }
-sqlx = { version = "0.6", features = ["macros", "migrate", "postgres", "runtime-tokio-rustls", "time"] }
+sqlx = { version = "0.6", features = ["macros", "migrate", "offline", "postgres", "runtime-tokio-rustls", "time"] }
 
 # web
 axum = { version = "0.5", features = ["headers", "http1", "http2", "multipart", "query", "tower-log"] }
