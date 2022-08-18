@@ -131,7 +131,7 @@ pub enum PostRequest {
 		description: Option<String>,
 		media_type: models::MediaType,
 	},
-	#[multipart(rename = "update_tags")]
+	#[multipart(rename = "update-tags")]
 	UpdateTags { tags: Vec<models::TagId> },
 }
 
