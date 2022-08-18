@@ -19,7 +19,7 @@ fn basic_name() {
 		content: "abc".into(),
 		bare: true,
 	}]);
-	assert_eq!(ast.root(), &Node::Tag(Tag::name("abc")));
+	assert_eq!(ast.root(), &Node::Tag(Tag::name("abc", Span::null())));
 }
 
 #[test]
@@ -31,7 +31,7 @@ fn basic_category() {
 		},
 		Token::Colon,
 	]);
-	assert_eq!(ast.root(), &Node::Tag(Tag::category("abc")));
+	assert_eq!(ast.root(), &Node::Tag(Tag::category("abc", Span::null())));
 }
 
 #[test]
@@ -47,7 +47,10 @@ fn basic_both() {
 			bare: true,
 		},
 	]);
-	assert_eq!(ast.root(), &Node::Tag(Tag::both("abc", "def").unwrap()));
+	assert_eq!(
+		ast.root(),
+		&Node::Tag(Tag::both("abc", Span::null(), "def", Span::null()).unwrap())
+	);
 }
 
 #[test]
@@ -71,10 +74,13 @@ fn simple_operator() {
 	]);
 	match ast.root() {
 		Node::And(left, right) => {
-			assert_eq!(ast.resolve_key(*left), &Node::Tag(Tag::category("abc")));
+			assert_eq!(
+				ast.resolve_key(*left),
+				&Node::Tag(Tag::category("abc", Span::null()))
+			);
 			assert_eq!(
 				ast.resolve_key(*right),
-				&Node::Tag(Tag::both("def", "ghi").unwrap())
+				&Node::Tag(Tag::both("def", Span::null(), "ghi", Span::null()).unwrap())
 			);
 		}
 		_ => panic!("expected And node"),
@@ -106,14 +112,23 @@ fn nesting() {
 		Node::Or(left, right) => {
 			match ast.resolve_key(*left) {
 				Node::And(left, right) => {
-					assert_eq!(ast.resolve_key(*left), &Node::Tag(Tag::name("abc")));
-					assert_eq!(ast.resolve_key(*right), &Node::Tag(Tag::name("def")));
+					assert_eq!(
+						ast.resolve_key(*left),
+						&Node::Tag(Tag::name("abc", Span::null()))
+					);
+					assert_eq!(
+						ast.resolve_key(*right),
+						&Node::Tag(Tag::name("def", Span::null()))
+					);
 				}
 				_ => panic!("expected And node"),
 			};
 			match ast.resolve_key(*right) {
 				Node::Not(child) => {
-					assert_eq!(ast.resolve_key(*child), &Node::Tag(Tag::name("ghi")));
+					assert_eq!(
+						ast.resolve_key(*child),
+						&Node::Tag(Tag::name("ghi", Span::null()))
+					);
 				}
 				_ => panic!("expected Not node"),
 			}
@@ -146,14 +161,23 @@ fn associativity() {
 		Node::Or(left, right) => {
 			match ast.resolve_key(*left) {
 				Node::And(left, right) => {
-					assert_eq!(ast.resolve_key(*left), &Node::Tag(Tag::name("abc")));
-					assert_eq!(ast.resolve_key(*right), &Node::Tag(Tag::name("def")));
+					assert_eq!(
+						ast.resolve_key(*left),
+						&Node::Tag(Tag::name("abc", Span::null()))
+					);
+					assert_eq!(
+						ast.resolve_key(*right),
+						&Node::Tag(Tag::name("def", Span::null()))
+					);
 				}
 				_ => panic!("expected And node"),
 			};
 			match ast.resolve_key(*right) {
 				Node::Not(child) => {
-					assert_eq!(ast.resolve_key(*child), &Node::Tag(Tag::name("ghi")));
+					assert_eq!(
+						ast.resolve_key(*child),
+						&Node::Tag(Tag::name("ghi", Span::null()))
+					);
 				}
 				_ => panic!("expected Not node"),
 			}

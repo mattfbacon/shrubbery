@@ -45,21 +45,26 @@ pub async fn get_handler(
 		Some(ViewSpecOrError {
 			raw,
 			parsed: Ok(viewspec),
-		}) => {
-			let results = eval_viewspec::evaluate(&viewspec, &*database, after, page_size)
-				.await
-				.map_err(error::Sqlx)?;
-			Some(SearchResults {
+		}) => match eval_viewspec::evaluate(&viewspec, &*database, after, page_size).await {
+			Ok(results) => Some(SearchResults {
 				query: raw,
 				results: Ok(results),
-			})
-		}
+			}),
+			Err(eval_viewspec::Error::Sqlx(sql_error)) => return Err(error::Sqlx(sql_error).into()),
+			Err(eval_viewspec::Error::User(user_error)) => Some(SearchResults {
+				query: raw,
+				results: Err(ViewSpecError::User {
+					parsed: viewspec,
+					error: user_error,
+				}),
+			}),
+		},
 		Some(ViewSpecOrError {
 			raw,
-			parsed: Err(error),
+			parsed: Err(parse_error),
 		}) => Some(SearchResults {
 			query: raw,
-			results: Err(error),
+			results: Err(ViewSpecError::Parse(parse_error)),
 		}),
 		None => None,
 	};

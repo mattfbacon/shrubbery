@@ -71,6 +71,49 @@ impl Ast {
 	pub fn resolve_key(&self, key: Key) -> &Node {
 		self.storage.get(key)
 	}
+
+	/// Find a tag within the AST by a predicate.
+	///
+	/// Prefers tags that occurred earlier in the input.
+	#[must_use]
+	pub fn find_tag(&self, mut predicate: impl FnMut(&Tag) -> bool) -> Option<&Tag> {
+		self.find_map_tag(|tag| if predicate(tag) { Some(tag) } else { None })
+	}
+
+	/// Find a tag within the AST by a predicate.
+	///
+	/// Prefers tags that occurred earlier in the input.
+	#[must_use]
+	pub fn find_map_tag<'a, U>(
+		&'a self,
+		mut predicate: impl FnMut(&'a Tag) -> Option<U>,
+	) -> Option<U> {
+		let mut stack = smallvec::SmallVec::<[_; 50]>::new();
+
+		macro_rules! step {
+			($node:expr) => {
+				match $node {
+					Node::And(left, right) | Node::Or(left, right) => {
+						stack.extend([*left, *right].into_iter().rev())
+					}
+					Node::Not(child) => stack.push(*child),
+					Node::Tag(tag) => {
+						if let Some(ret) = predicate(tag) {
+							return Some(ret);
+						}
+					}
+				}
+			};
+		}
+
+		step!(&self.root);
+
+		while let Some(node) = stack.pop() {
+			step!(self.resolve_key(node));
+		}
+
+		None
+	}
 }
 
 impl Debug for Ast {

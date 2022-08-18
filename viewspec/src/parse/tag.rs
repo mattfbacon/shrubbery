@@ -1,6 +1,8 @@
 //! Provides owned [`Tag`] and borrowed [`Ref`].
 #![allow(unsafe_code)]
 
+use crate::lex::span::Span;
+
 /// The basic node of the AST, referring to a tag within the database that files can be tagged with.
 ///
 /// Can have a name and/or a category.
@@ -14,16 +16,16 @@ impl Tag {
 	///
 	/// Analogous to `Ref::Name`.
 	#[must_use]
-	pub fn name(name: &str) -> Self {
-		Self(TagInner::new(&[name], TagKind::Name))
+	pub fn name(name: &str, span: Span) -> Self {
+		Self(TagInner::new(&[name], TagKind::Name(span)))
 	}
 
 	/// Create a [`Tag`] that contains a `category`.
 	///
 	/// Analogous to `Ref::Category`.
 	#[must_use]
-	pub fn category(category: &str) -> Self {
-		Self(TagInner::new(&[category], TagKind::Category))
+	pub fn category(category: &str, span: Span) -> Self {
+		Self(TagInner::new(&[category], TagKind::Category(span)))
 	}
 
 	/// Create a [`Tag`] that contains both a `category` and a `name`.
@@ -32,10 +34,12 @@ impl Tag {
 	///
 	/// Returns `None` if `category` is too long.
 	#[must_use]
-	pub fn both(category: &str, name: &str) -> Option<Self> {
+	pub fn both(category: &str, category_span: Span, name: &str, name_span: Span) -> Option<Self> {
 		Some(Self(TagInner::new(
 			&[category, name],
 			TagKind::Both {
+				category_span,
+				name_span,
 				name_start: category.len().try_into().ok()?,
 			},
 		)))
@@ -49,12 +53,21 @@ impl Tag {
 	#[must_use]
 	pub fn as_ref(&self) -> Ref<'_> {
 		match self.0.kind {
-			TagKind::Name => Ref::Name(&self.0.data),
-			TagKind::Category => Ref::Category(&self.0.data),
-			TagKind::Both { name_start } => {
+			TagKind::Name(span) => Ref::Name(&self.0.data, span),
+			TagKind::Category(span) => Ref::Category(&self.0.data, span),
+			TagKind::Both {
+				category_span,
+				name_span,
+				name_start,
+			} => {
 				let name_start = usize::from(name_start);
 				let (category, name) = self.0.data.split_at(name_start);
-				Ref::Both { category, name }
+				Ref::Both {
+					category,
+					category_span,
+					name,
+					name_span,
+				}
 			}
 		}
 	}
@@ -87,11 +100,16 @@ impl std::fmt::Debug for Tag {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Ref<'a> {
 	#[allow(missing_docs)]
-	Name(&'a str),
+	Name(&'a str, Span),
 	#[allow(missing_docs)]
-	Category(&'a str),
+	Category(&'a str, Span),
 	#[allow(missing_docs)]
-	Both { category: &'a str, name: &'a str },
+	Both {
+		category: &'a str,
+		category_span: Span,
+		name: &'a str,
+		name_span: Span,
+	},
 }
 
 impl Ref<'_> {
@@ -102,25 +120,32 @@ impl Ref<'_> {
 	/// This function will panic if it is a `Both` variant and the category is too long. However, this can only occur if the [`Ref`] was created from some other source than a [`Tag`], which is generally not a good idea.
 	fn to_owned(self) -> Tag {
 		match self {
-			Self::Name(name) => Tag::name(name),
-			Self::Category(category) => Tag::category(category),
-			Self::Both { category, name } => Tag::both(category, name).unwrap(), /* We unwrap because we assume that the `Ref` came from a valid `Tag`. While this won't necessarily always be the case, it is the only use case we need to worry about. */
+			Self::Name(name, span) => Tag::name(name, span),
+			Self::Category(category, span) => Tag::category(category, span),
+			Self::Both {
+				category,
+				category_span,
+				name,
+				name_span,
+			} => Tag::both(category, category_span, name, name_span).unwrap(), /* We unwrap because we assume that the `Ref` came from a valid `Tag`. While this won't necessarily always be the case, it is the only use case we need to worry about. */
 		}
 	}
 }
 
 #[derive(Debug, Clone, Copy)]
 enum TagKind {
-	Name,
-	Category,
-	Both { name_start: u16 },
+	Name(Span),
+	Category(Span),
+	Both {
+		name_span: Span,
+		category_span: Span,
+		name_start: u16,
+	},
 }
 
 #[repr(C)]
 struct TagInner {
-	// this field has alignment of 2, so the whole struct does as well
 	kind: TagKind,
-	// this field has no alignment requirement, so there will be no padding before it
 	data: str,
 }
 

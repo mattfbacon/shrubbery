@@ -164,11 +164,11 @@ pub fn parse(input: impl Iterator<Item = SpannedToken>) -> Result<Ast> {
 
 fn tag(input: &mut std::iter::Peekable<impl Iterator<Item = SpannedToken>>) -> Result<Node> {
 	let first = input.next();
-	let first = match first {
+	let (first, first_span) = match first {
 		Some(SpannedToken {
 			token: Token::String { content, .. },
-			..
-		}) => content,
+			span,
+		}) => (content, span),
 		other => {
 			return Err(Error::ExpectedTagGot(
 				other.map(|token| (token.span, token.token.into_type())),
@@ -185,22 +185,20 @@ fn tag(input: &mut std::iter::Peekable<impl Iterator<Item = SpannedToken>>) -> R
 				}
 			)
 		}) {
-			Some(
-				ref spanned @ SpannedToken {
-					token: Token::String {
-						content: ref second,
-						..
-					},
+			Some(SpannedToken {
+				token: Token::String {
+					content: ref second,
 					..
 				},
-			) => match ast::Tag::both(&first, second) {
+				span: second_span,
+			}) => match ast::Tag::both(&first, first_span, second, second_span) {
 				Some(tag) => tag,
-				None => return Err(Error::CategoryTooLong(spanned.span)),
+				None => return Err(Error::CategoryTooLong(first_span)),
 			},
-			_ => ast::Tag::category(&first),
+			_ => ast::Tag::category(&first, first_span),
 		}
 	} else {
-		ast::Tag::name(&first)
+		ast::Tag::name(&first, first_span)
 	};
 	Ok(Node::Tag(tag))
 }
