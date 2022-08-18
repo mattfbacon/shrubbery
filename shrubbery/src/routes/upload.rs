@@ -23,7 +23,7 @@ async fn get_handler(auth::Editor(self_user): auth::Editor) -> impl IntoResponse
 struct PostRequest {
 	name: String,
 	description: Option<String>,
-	file: axum_easy_multipart::file::File,
+	file: axum_easy_multipart::file::File<crate::routes::files::id::MakeTempfile>,
 }
 
 async fn post_handler(
