@@ -151,7 +151,7 @@ fn make_query(viewspec: &Ast, after: Option<models::FileId>, limit: i64) -> (Str
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
-pub struct EvaluateItem {
+pub struct ResultItem {
 	pub id: models::FileId,
 	pub name: String,
 }
@@ -177,7 +177,7 @@ pub async fn evaluate(
 	database: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
 	after: Option<models::FileId>,
 	page_size: i64,
-) -> Result<Vec<EvaluateItem>, Error> {
+) -> Result<Vec<ResultItem>, Error> {
 	tracing::debug!("evaluating viewspec {viewspec:?}");
 
 	let (query, bindings) = make_query(viewspec, after, page_size);

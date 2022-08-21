@@ -8,7 +8,9 @@ use viewspec::lex::token::Type as TokenType;
 use viewspec::parse::tag::Ref as TagRef;
 use viewspec::parse::{self, Ast};
 
-use crate::eval_viewspec::UserError;
+pub mod evaluate;
+
+use evaluate::UserError;
 
 #[derive(Debug)]
 pub enum Error {

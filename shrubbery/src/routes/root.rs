@@ -5,13 +5,12 @@ use axum::{extract, Router};
 
 use crate::database::{models, Database};
 use crate::error;
-use crate::eval_viewspec::{self, EvaluateItem};
 use crate::helpers::auth;
-use crate::helpers::viewspec::{Error as ViewSpecError, ViewSpecOrError};
+use crate::helpers::viewspec::{evaluate, Error as ViewSpecError, ViewSpecOrError};
 
 struct SearchResults {
 	query: String,
-	results: Result<Vec<EvaluateItem>, ViewSpecError>,
+	results: Result<Vec<evaluate::ResultItem>, ViewSpecError>,
 }
 
 #[derive(askama::Template)]
@@ -45,13 +44,13 @@ pub async fn get_handler(
 		Some(ViewSpecOrError {
 			raw,
 			parsed: Ok(viewspec),
-		}) => match eval_viewspec::evaluate(&viewspec, &*database, after, page_size).await {
+		}) => match evaluate::evaluate(&viewspec, &*database, after, page_size).await {
 			Ok(results) => Some(SearchResults {
 				query: raw,
 				results: Ok(results),
 			}),
-			Err(eval_viewspec::Error::Sqlx(sql_error)) => return Err(error::Sqlx(sql_error).into()),
-			Err(eval_viewspec::Error::User(user_error)) => Some(SearchResults {
+			Err(evaluate::Error::Sqlx(sql_error)) => return Err(error::Sqlx(sql_error).into()),
+			Err(evaluate::Error::User(user_error)) => Some(SearchResults {
 				query: raw,
 				results: Err(ViewSpecError::User {
 					parsed: viewspec,

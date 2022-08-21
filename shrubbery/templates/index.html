@@ -20,14 +20,14 @@
 
 {% if let Some(SearchResults { query, results: Ok(results) }) = search_results -%}
 	<ul>
-		{% for EvaluateItem { id, name } in results -%}
+		{% for evaluate::ResultItem { id, name } in results -%}
 			<li><a href="/files/{{id}}">{{name}}</a></li>
 		{%- endfor %}
 	</ul>
 
 	{# I would compare inside `map` but can't use closures due to the pipe character #}
 	{% if i64::try_from(results.len()).unwrap_or(i64::MAX) >= page_size -%}
-		{%- if let Some(EvaluateItem { id: last_id, name: _ }) = results.last() -%}
+		{%- if let Some(evaluate::ResultItem { id: last_id, name: _ }) = results.last() -%}
 			<form method="get">
 				<input type="hidden" name="search" value="{{query}}">
 				<input type="hidden" name="after" value="{{last_id}}" />
